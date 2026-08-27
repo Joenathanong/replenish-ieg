@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring Replenish — OCS IEG</title>
+  <link rel="stylesheet" href="/css/fiori.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23354a5f'/><text y='72' x='50' text-anchor='middle' font-size='58' font-family='Arial' font-weight='bold' fill='white'>R</text></svg>">
+</head>
+<body>
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M17.65 6.35A8 8 0 1 0 19.73 14h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M19.14 12.94a7.5 7.5 0 0 0 0-1.88l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.24-1.12.55-1.62.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.5 7.5 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.39 1.04.7 1.62.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.58-.24 1.12-.55 1.62-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><path d="M21 3H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h7v2H7v2h10v-2h-3v-2h7a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 13H3V5h18z"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l4 4 4-4H6a7 7 0 1 1 7 7 6.9 6.9 0 0 1-4.2-1.4l-1.4 1.5A9 9 0 1 0 13 3zm-1 5v5l4.3 2.6.7-1.2-3.5-2.1V8z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7zM5 18v2h14v-2z"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zm17.71-10.2a1 1 0 0 0 0-1.41l-2.35-2.35a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"/></symbol>
+  <symbol id="i-error" viewBox="0 0 24 24"><path d="M12 2 1 21h22zm1 14h-2v2h2zm0-6h-2v4h2z"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-2h2zm0-4h-2V7h2z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 2 3 6.5V18l9 4 9-4V6.5zm0 2.2 6.5 3.2L12 10.6 5.5 7.4zM5 9.2l6 3v7.3l-6-2.7zm14 7.6-6 2.7v-7.3l6-3z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 21 5 14h4V3h6v11h4z"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m12 3 7 7h-4v11H9V10H5z"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M3 3h8v2H5v6H3zm10 0h8v8h-2V5h-6zm6 10h2v8h-8v-2h6zM5 13v6h6v2H3v-8z"/></symbol>
+</svg>
+
+<header class="shellbar">
+  <div class="shellbar__logo">IE</div>
+  <div>
+    <div class="shellbar__title">Monitoring Replenish</div>
+    <div class="shellbar__subtitle">Basis: Qty Rack — Gudang Kecil</div>
+  </div>
+  <div class="shellbar__spacer"></div>
+  <div class="shellbar__status" id="syncStatus">
+    <span class="dot dot--busy"></span><span id="syncStatusText">Memuat…</span>
+  </div>
+  <button class="shellbar__btn" id="btnSync" title="Tarik data terbaru dari OCS sekarang">
+    <svg class="icon"><use href="#i-refresh"/></svg><span>Sinkron</span>
+  </button>
+  <button class="shellbar__btn" id="btnSlide" title="Tampilan slide untuk layar gudang">
+    <svg class="icon"><use href="#i-play"/></svg><span>Mode Slide</span>
+  </button>
+</header>
+
+<nav class="tabbar">
+  <button class="tabbar__item is-active" data-tab="monitoring">
+    <svg class="icon"><use href="#i-monitor"/></svg> Monitoring
+  </button>
+  <button class="tabbar__item" data-tab="pengaturan">
+    <svg class="icon"><use href="#i-settings"/></svg> Pengaturan
+  </button>
+  <button class="tabbar__item" data-tab="ambang">
+    <svg class="icon"><use href="#i-box"/></svg> Ambang per Item
+  </button>
+  <button class="tabbar__item" data-tab="riwayat">
+    <svg class="icon"><use href="#i-history"/></svg> Riwayat Sinkronisasi
+  </button>
+</nav>
+
+<main id="main"></main>
+
+<div id="dialogHost"></div>
+<div id="slideHost"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

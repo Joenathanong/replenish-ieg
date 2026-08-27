@@ -1,0 +1,21 @@
+{
+  "name": "ocs-replenish-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monitoring replenish stok gudang berbasis data OCS IEG (Qty Rack)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "worker": "node src/worker.js",
+    "migrate": "node scripts/migrate.js",
+    "check-db": "node scripts/check-db.js",
+    "sync-once": "node scripts/sync-once.js",
+    "import-sqlite": "node scripts/import-sqlite.js"
+  },
+  "dependencies": {
+    "mysql2": "^3.24.2"
+  }
+}
