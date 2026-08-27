@@ -25,6 +25,12 @@ berhubungan langsung — mereka bertemu di TiDB. Karena itu:
 - Interval penarikan tetap diatur dari halaman Pengaturan, dibaca ulang tiap putaran
   oleh worker — mengubahnya tidak perlu me-restart apa pun.
 
+> **Catatan:** `package.json` sengaja tidak punya skrip `start`. Bila ada, Vercel
+> mengira proyek ini aplikasi server Node lalu menjalankan `src/server.js` untuk
+> melayani `/`, padahal folder `public/` tidak ikut dalam bundle function-nya —
+> hasilnya halaman depan menjawab 404. Server lokal dijalankan dengan
+> `npm run serve`.
+
 ---
 
 ## 1. Siapkan database TiDB Cloud

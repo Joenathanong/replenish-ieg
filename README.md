@@ -17,7 +17,7 @@ Butuh Node.js 22.5+ dan sebuah database TiDB Cloud.
 npm install
 cp .env.example .env      # lalu isi TIDB_URL
 npm run migrate           # buat tabel
-npm start
+npm run serve
 ```
 
 Lalu buka <http://localhost:3000>.
@@ -29,6 +29,7 @@ dengan worker di PC gudang dan dashboard di Vercel.
 
 | Perintah | Kegunaan |
 |---|---|
+| `npm run serve` | Server web lokal, lengkap dengan penjadwal internal |
 | `npm run worker` | Worker penarik data saja, tanpa web server (dipakai di PC gudang) |
 | `npm run migrate` | Membuat seluruh tabel di TiDB (aman diulang) |
 | `npm run check-db` | Uji koneksi, TLS, tulis, baca, hapus |
