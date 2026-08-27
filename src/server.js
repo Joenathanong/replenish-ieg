@@ -42,7 +42,21 @@ async function serveStatic(req, res, pathname) {
         const html = await readFile(join(PUBLIC_DIR, 'index.html'));
         res.writeHead(200, { 'Content-Type': MIME['.html'], 'Cache-Control': 'no-cache' });
         return res.end(html);
-      } catch { /* jatuh ke 404 */ }
+      } catch {
+        /*
+         * Di platform serverless, berkas statis disajikan CDN dan folder public/
+         * tidak ikut dalam bundle function ini — sehingga pembacaan di atas gagal.
+         * Alihkan saja ke /index.html, yang dijamin ada di CDN. Aplikasi memakai
+         * rute berbasis hash, jadi tidak ada informasi rute yang hilang.
+         *
+         * Penjaga `rel !== '/index.html'` mencegah pengalihan berputar seandainya
+         * permintaan itu sendiri yang sampai ke sini.
+         */
+        if (rel !== '/index.html') {
+          res.writeHead(302, { Location: '/index.html', 'Cache-Control': 'no-store' });
+          return res.end();
+        }
+      }
     }
     sendText(res, 404, 'Tidak ditemukan');
   }
