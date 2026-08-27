@@ -1,81 +1,88 @@
 /* =========================================================================
-   OCS Replenish Monitor — tema mengikuti SAP Fiori 3 (Quartz Light).
-   Token warna & jarak disamakan dengan design language Fiori agar terasa
-   satu keluarga dengan aplikasi SAP lain yang dipakai tim.
+   OCS Replenish Monitor — tema mengikuti SAP Horizon, penerus Fiori 3.
+
+   Horizon adalah bahasa desain SAP yang sekarang: warna lebih hidup, sudut
+   lebih membulat, bayangan berlapis menggantikan garis tipis, dan permukaan
+   diberi rona sesuai maknanya alih-alih sekadar teks berwarna.
+
+   Nama kelas sengaja dipertahankan sama persis seperti versi sebelumnya,
+   sehingga pergantian tema ini tidak menyentuh logika di app.js.
    ========================================================================= */
 
 :root {
-  /* Warna dasar */
-  --sapShellColor: #354a5f;
-  --sapShell_TextColor: #ffffff;
-  --sapShell_InteractiveBackground: #283848;
-  --sapBackgroundColor: #f5f6f7;
-  --sapTile_Background: #ffffff;
-  --sapGroup_ContentBackground: #ffffff;
+  /* ---- Warna merek ---- */
+  --brand: #0070f2;
+  --brand-hover: #0064d9;
+  --brand-soft: #ebf5ff;
 
-  /* Garis & pembatas */
-  --sapGroup_ContentBorderColor: #d9d9d9;
-  --sapList_BorderColor: #e5e5e5;
-  --sapField_BorderColor: #89919a;
+  /* ---- Permukaan ---- */
+  --bg: #eef1f6;              /* halaman: abu berona biru, bukan abu mati */
+  --surface: #ffffff;
+  --surface-alt: #f7f9fc;
+  --border: #e1e7f0;
+  --border-strong: #c3cddb;
 
-  /* Brand & interaksi */
-  --sapBrandColor: #0a6ed1;
-  --sapBrandColor_Hover: #0854a0;
-  --sapLinkColor: #0a6ed1;
-  --sapSelectedColor: #0854a0;
-  --sapHighlightColor: #0a6ed1;
+  /* ---- Teks ---- */
+  --text: #1a2733;
+  --text-muted: #5b738b;
+  --text-subtle: #8fa3b8;
 
-  /* Warna semantik */
-  --sapNegativeColor: #bb0000;
-  --sapCriticalColor: #e9730c;
-  --sapPositiveColor: #107e3e;
-  --sapNeutralColor: #6a6d70;
-  --sapInformativeColor: #0a6ed1;
+  /* ---- Warna semantik: teks, latar, garis ---- */
+  --negative: #d20a0a;
+  --negative-bg: #ffecec;
+  --negative-line: #ffc9c9;
 
-  --sapErrorBackground: #ffebeb;
-  --sapWarningBackground: #fef7f1;
-  --sapSuccessBackground: #f1fdf6;
-  --sapInformationBackground: #f5faff;
-  --sapNeutralBackground: #f4f4f4;
+  --critical: #d95400;
+  --critical-bg: #fff4e8;
+  --critical-line: #ffd9b0;
 
-  --sapErrorBorderColor: #ffb0b0;
-  --sapWarningBorderColor: #f5c884;
-  --sapSuccessBorderColor: #abe2c2;
-  --sapInformationBorderColor: #b5d8ff;
+  --positive: #1f7a3d;
+  --positive-bg: #e9f8ee;
+  --positive-line: #b3e6c4;
 
-  /* Teks */
-  --sapTextColor: #32363a;
-  --sapContent_LabelColor: #6a6d70;
-  --sapContent_ForegroundColor: #efefef;
-  --sapContent_DisabledTextColor: #a9a9a9;
+  --info: #0070f2;
+  --info-bg: #ebf5ff;
+  --info-line: #bcdcff;
 
-  /* Bentuk */
-  --sapElement_BorderCornerRadius: 4px;
-  --sapTile_BorderCornerRadius: 8px;
-  --sapShadow_Level0: 0 0 0 1px rgba(85, 89, 92, 0.15);
-  --sapShadow_Level1: 0 0 0.125rem 0 rgba(34, 54, 74, 0.2), 0 0.125rem 0.5rem 0 rgba(34, 54, 74, 0.2);
-  --sapShadow_Level2: 0 0 0.125rem 0 rgba(34, 54, 74, 0.2), 0 0.625rem 1.875rem 0 rgba(34, 54, 74, 0.2);
+  --neutral: #5b738b;
+  --neutral-bg: #eef1f6;
+  --neutral-line: #dbe3ed;
 
-  --sapFontFamily: "72", "72full", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --sapFontSize: 0.875rem;
+  /* ---- Bentuk & kedalaman ---- */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --pill: 999px;
 
-  --shellHeight: 2.75rem;
+  --shadow-sm: 0 1px 2px rgba(20, 35, 55, .06), 0 1px 3px rgba(20, 35, 55, .05);
+  --shadow: 0 2px 6px rgba(20, 35, 55, .07), 0 6px 16px rgba(20, 35, 55, .06);
+  --shadow-lg: 0 10px 34px rgba(20, 35, 55, .16);
+
+  --shell: linear-gradient(115deg, #0a2c5c 0%, #124a91 58%, #0f63bd 100%);
+
+  --font: "72", "72full", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --shellHeight: 3.25rem;
+
+  /* Alias nama lama, dipakai beberapa gaya inline di app.js. */
+  --sapNegativeColor: var(--negative);
+  --sapPositiveColor: var(--positive);
+  --sapCriticalColor: var(--critical);
+  --sapBrandColor: var(--brand);
+  --sapContent_LabelColor: var(--text-muted);
+  --sapTextColor: var(--text);
 }
 
 * { box-sizing: border-box; }
 
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-}
+html, body { margin: 0; padding: 0; height: 100%; }
 
 body {
-  font-family: var(--sapFontFamily);
-  font-size: var(--sapFontSize);
-  color: var(--sapTextColor);
-  background: var(--sapBackgroundColor);
+  font-family: var(--font);
+  font-size: 0.875rem;
+  color: var(--text);
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .icon { width: 1rem; height: 1rem; fill: currentColor; flex: none; }
@@ -85,73 +92,79 @@ body {
 
 .shellbar {
   height: var(--shellHeight);
-  background: var(--sapShellColor);
-  color: var(--sapShell_TextColor);
+  background: var(--shell);
+  color: #fff;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0 1rem;
+  gap: 0.85rem;
+  padding: 0 1.25rem;
   position: sticky;
   top: 0;
   z-index: 50;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .08) inset, 0 2px 12px rgba(10, 44, 92, .28);
 }
 
 .shellbar__logo {
-  width: 1.5rem; height: 1.5rem;
-  border-radius: 3px;
-  background: #ffffff;
-  color: var(--sapShellColor);
+  width: 1.85rem; height: 1.85rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .16);
+  border: 1px solid rgba(255, 255, 255, .28);
+  color: #fff;
   display: grid; place-items: center;
-  font-weight: 700; font-size: 0.7rem;
+  font-weight: 700; font-size: 0.72rem; letter-spacing: .02em;
   flex: none;
+  backdrop-filter: blur(4px);
 }
 
-.shellbar__title { font-size: 1rem; font-weight: 700; white-space: nowrap; }
-.shellbar__subtitle { font-size: 0.75rem; opacity: 0.75; white-space: nowrap; }
+.shellbar__title { font-size: 1.0625rem; font-weight: 700; white-space: nowrap; letter-spacing: -.01em; }
+.shellbar__subtitle { font-size: 0.72rem; opacity: .72; white-space: nowrap; margin-top: 1px; }
 .shellbar__spacer { flex: 1 1 auto; }
 
 .shellbar__status {
-  display: flex; align-items: center; gap: 0.4rem;
-  font-size: 0.75rem;
-  padding: 0.25rem 0.6rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.12);
+  display: flex; align-items: center; gap: 0.45rem;
+  font-size: 0.75rem; font-weight: 500;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--pill);
+  background: rgba(255, 255, 255, .14);
+  border: 1px solid rgba(255, 255, 255, .16);
   white-space: nowrap;
 }
 
 .shellbar__btn {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .16);
   color: inherit;
-  height: 2.25rem;
-  min-width: 2.25rem;
-  padding: 0 0.6rem;
-  border-radius: var(--sapElement_BorderCornerRadius);
+  height: 2.1rem;
+  min-width: 2.1rem;
+  padding: 0 0.7rem;
+  border-radius: var(--pill);
   cursor: pointer;
   display: inline-flex; align-items: center; gap: 0.4rem;
-  font-family: inherit; font-size: 0.8125rem;
+  font-family: inherit; font-size: 0.8125rem; font-weight: 500;
+  transition: background .15s ease, transform .15s ease;
 }
-.shellbar__btn:hover { background: var(--sapShell_InteractiveBackground); }
-.shellbar__btn:disabled { opacity: 0.5; cursor: default; }
+.shellbar__btn:hover { background: rgba(255, 255, 255, .24); }
+.shellbar__btn:active { transform: scale(.97); }
+.shellbar__btn:disabled { opacity: .45; cursor: default; }
 
 .dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; flex: none; }
-.dot--ok { background: #abe2c2; }
-.dot--busy { background: #f5c884; animation: pulse 1s infinite; }
-.dot--err { background: #ffb0b0; }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.dot--ok { background: #4fd18b; box-shadow: 0 0 0 3px rgba(79, 209, 139, .22); }
+.dot--busy { background: #ffc65c; box-shadow: 0 0 0 3px rgba(255, 198, 92, .22); animation: pulse 1.1s infinite; }
+.dot--err { background: #ff7b7b; box-shadow: 0 0 0 3px rgba(255, 123, 123, .22); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
 
 /* ---------------------------- Icon Tab Bar ---------------------------- */
 
 .tabbar {
-  background: var(--sapGroup_ContentBackground);
-  border-bottom: 1px solid var(--sapGroup_ContentBorderColor);
+  background: var(--surface);
   display: flex;
   align-items: stretch;
-  padding: 0 1rem;
-  gap: 0.25rem;
+  padding: 0 1.25rem;
+  gap: 0.15rem;
   position: sticky;
   top: var(--shellHeight);
   z-index: 40;
+  box-shadow: 0 1px 0 var(--border), 0 2px 8px rgba(20, 35, 55, .04);
 }
 
 .tabbar__item {
@@ -159,193 +172,237 @@ body {
   background: transparent;
   font-family: inherit;
   font-size: 0.875rem;
-  color: var(--sapContent_LabelColor);
-  padding: 0.75rem 1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 0.9rem 1.05rem 0.75rem;
   cursor: pointer;
-  border-bottom: 3px solid transparent;
+  position: relative;
   display: inline-flex; align-items: center; gap: 0.5rem;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: color .15s ease, background .15s ease;
 }
-.tabbar__item:hover { background: #f0f0f0; color: var(--sapTextColor); }
-.tabbar__item.is-active {
-  color: var(--sapBrandColor);
-  border-bottom-color: var(--sapBrandColor);
-  font-weight: 600;
+.tabbar__item::after {
+  content: ""; position: absolute; left: .75rem; right: .75rem; bottom: 0;
+  height: 3px; border-radius: 3px 3px 0 0; background: transparent;
+  transition: background .18s ease;
 }
+.tabbar__item:hover { color: var(--text); background: var(--surface-alt); }
+.tabbar__item.is-active { color: var(--brand); font-weight: 600; }
+.tabbar__item.is-active::after { background: var(--brand); }
 
 /* ---------------------------- Layout ---------------------------- */
 
-.page { padding: 1rem; max-width: 1800px; margin: 0 auto; }
-.page__title { font-size: 1.125rem; font-weight: 700; margin: 0 0 0.25rem; }
-.page__desc { color: var(--sapContent_LabelColor); margin: 0 0 1rem; font-size: 0.8125rem; }
+.page { padding: 1.25rem; max-width: 1840px; margin: 0 auto; }
+.page__title { font-size: 1.375rem; font-weight: 700; margin: 0 0 0.2rem; letter-spacing: -.015em; }
+.page__desc { color: var(--text-muted); margin: 0 0 1.25rem; font-size: 0.8125rem; }
 
 .panel {
-  background: var(--sapGroup_ContentBackground);
-  border: 1px solid var(--sapGroup_ContentBorderColor);
-  border-radius: var(--sapElement_BorderCornerRadius);
-  box-shadow: var(--sapShadow_Level0);
-  margin-bottom: 1rem;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.25rem;
+  overflow: hidden;
 }
 .panel__head {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--sapList_BorderColor);
+  padding: 1rem 1.25rem 0.85rem;
   display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
 }
-.panel__title { font-size: 1rem; font-weight: 700; margin: 0; }
-.panel__hint { color: var(--sapContent_LabelColor); font-size: 0.75rem; margin: 0.15rem 0 0; }
-.panel__body { padding: 1rem; }
+.panel__title { font-size: 1rem; font-weight: 700; margin: 0; letter-spacing: -.01em; }
+.panel__hint { color: var(--text-muted); font-size: 0.75rem; margin: 0.15rem 0 0; }
+.panel__body { padding: 1.25rem; }
 .panel__body--flush { padding: 0; }
 
-/* ---------------------------- Generic Tile (KPI) ---------------------------- */
+/* ---------------------------- Kartu KPI ---------------------------- */
 
 .tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
 }
 
+/*
+ * Perbedaan terbesar dari versi sebelumnya: latar kartu diberi rona sesuai
+ * maknanya, bukan putih polos dengan garis kiri berwarna. Status terbaca dari
+ * jauh tanpa perlu membaca angkanya lebih dulu.
+ */
 .tile {
-  background: var(--sapTile_Background);
-  border: 1px solid var(--sapGroup_ContentBorderColor);
-  border-radius: var(--sapTile_BorderCornerRadius);
-  box-shadow: var(--sapShadow_Level0);
-  padding: 0.875rem 1rem;
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 1rem 1.1rem 0.9rem;
   cursor: pointer;
   text-align: left;
   font-family: inherit;
-  display: flex; flex-direction: column; gap: 0.35rem;
-  min-height: 6.25rem;
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
-  border-left: 4px solid var(--sapNeutralColor);
+  display: flex; flex-direction: column; gap: 0.3rem;
+  min-height: 7rem;
+  overflow: hidden;
+  transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
 }
-.tile:hover { box-shadow: var(--sapShadow_Level1); transform: translateY(-1px); }
-.tile.is-active { outline: 2px solid var(--sapBrandColor); outline-offset: -2px; }
+.tile::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
+  background: var(--neutral); opacity: .9;
+}
+.tile:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.tile:active { transform: translateY(0); }
+.tile.is-active { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft), var(--shadow); }
 
-.tile__label { font-size: 0.8125rem; color: var(--sapContent_LabelColor); font-weight: 600; }
-.tile__value { font-size: 2rem; font-weight: 300; line-height: 1.1; }
-.tile__foot { font-size: 0.75rem; color: var(--sapContent_LabelColor); margin-top: auto; }
+.tile__label {
+  font-size: 0.78rem; color: var(--text-muted); font-weight: 600;
+  letter-spacing: .01em; text-transform: uppercase;
+}
+.tile__value {
+  font-size: 2.5rem; font-weight: 600; line-height: 1.05;
+  letter-spacing: -.03em; font-variant-numeric: tabular-nums;
+}
+.tile__foot { font-size: 0.75rem; color: var(--text-muted); margin-top: auto; padding-top: .35rem; }
 
-.tile--negative { border-left-color: var(--sapNegativeColor); }
-.tile--negative .tile__value { color: var(--sapNegativeColor); }
-.tile--critical { border-left-color: var(--sapCriticalColor); }
-.tile--critical .tile__value { color: var(--sapCriticalColor); }
-.tile--positive { border-left-color: var(--sapPositiveColor); }
-.tile--positive .tile__value { color: var(--sapPositiveColor); }
-.tile--informative { border-left-color: var(--sapInformativeColor); }
-.tile--informative .tile__value { color: var(--sapInformativeColor); }
-.tile--neutral { border-left-color: var(--sapNeutralColor); }
+.tile--negative { background: linear-gradient(180deg, var(--negative-bg) 0%, #fff 62%); border-color: var(--negative-line); }
+.tile--negative::before { background: var(--negative); }
+.tile--negative .tile__value { color: var(--negative); }
 
-/* ---------------------------- Form controls ---------------------------- */
+.tile--critical { background: linear-gradient(180deg, var(--critical-bg) 0%, #fff 62%); border-color: var(--critical-line); }
+.tile--critical::before { background: var(--critical); }
+.tile--critical .tile__value { color: var(--critical); }
+
+.tile--positive { background: linear-gradient(180deg, var(--positive-bg) 0%, #fff 62%); border-color: var(--positive-line); }
+.tile--positive::before { background: var(--positive); }
+.tile--positive .tile__value { color: var(--positive); }
+
+.tile--informative { background: linear-gradient(180deg, var(--info-bg) 0%, #fff 62%); border-color: var(--info-line); }
+.tile--informative::before { background: var(--info); }
+.tile--informative .tile__value { color: var(--info); }
+
+.tile--neutral::before { background: var(--neutral); }
+.tile--neutral .tile__value { color: var(--text); }
+
+/* ---------------------------- Kontrol formulir ---------------------------- */
 
 .toolbar {
-  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--sapList_BorderColor);
+  display: flex; align-items: flex-end; gap: 0.65rem; flex-wrap: wrap;
+  padding: 1rem 1.25rem;
+  background: var(--surface-alt);
+  box-shadow: inset 0 -1px 0 var(--border);
 }
 .toolbar__spacer { flex: 1 1 auto; }
 
-.field { display: inline-flex; flex-direction: column; gap: 0.25rem; }
-.field__label { font-size: 0.75rem; color: var(--sapContent_LabelColor); font-weight: 600; }
+.field { display: inline-flex; flex-direction: column; gap: 0.3rem; }
+.field__label {
+  font-size: 0.7rem; color: var(--text-muted); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em;
+}
 
 .input, .select {
   font-family: inherit;
   font-size: 0.875rem;
-  color: var(--sapTextColor);
-  height: 2.25rem;
-  padding: 0 0.625rem;
-  border: 1px solid var(--sapField_BorderColor);
-  border-bottom: 2px solid var(--sapField_BorderColor);
-  border-radius: var(--sapElement_BorderCornerRadius);
-  background: #ffffff;
+  color: var(--text);
+  height: 2.35rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
   outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
-.input:focus, .select:focus { border-color: var(--sapBrandColor); box-shadow: 0 0 0 1px var(--sapBrandColor); }
-.input--search { min-width: 16rem; }
+.input::placeholder { color: var(--text-subtle); }
+.input:hover, .select:hover { border-color: var(--brand); }
+.input:focus, .select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.input--search { min-width: 17rem; }
 .input--num { width: 6.5rem; }
 
 .btn {
   font-family: inherit;
-  font-size: 0.875rem;
-  height: 2.25rem;
-  padding: 0 0.75rem;
-  border-radius: var(--sapElement_BorderCornerRadius);
-  border: 1px solid var(--sapField_BorderColor);
-  background: #ffffff;
-  color: var(--sapBrandColor);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  height: 2.35rem;
+  padding: 0 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--brand);
   cursor: pointer;
-  display: inline-flex; align-items: center; gap: 0.4rem;
+  display: inline-flex; align-items: center; gap: 0.45rem;
   white-space: nowrap;
+  text-decoration: none;
+  transition: background .15s ease, border-color .15s ease, transform .12s ease, box-shadow .15s ease;
 }
-.btn:hover { background: #ebf5fe; border-color: var(--sapBrandColor); }
-.btn:disabled { opacity: 0.5; cursor: default; background: #f5f5f5; color: var(--sapContent_DisabledTextColor); }
-.btn--emphasized { background: var(--sapBrandColor); border-color: var(--sapBrandColor); color: #fff; font-weight: 600; }
-.btn--emphasized:hover { background: var(--sapBrandColor_Hover); border-color: var(--sapBrandColor_Hover); }
+.btn:hover { background: var(--brand-soft); border-color: var(--brand); }
+.btn:active { transform: scale(.98); }
+.btn:disabled { opacity: .5; cursor: default; background: var(--neutral-bg); color: var(--text-subtle); }
+.btn--emphasized {
+  background: var(--brand); border-color: var(--brand); color: #fff;
+  box-shadow: 0 1px 2px rgba(0, 112, 242, .3);
+}
+.btn--emphasized:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
 .btn--transparent { border-color: transparent; background: transparent; }
-.btn--transparent:hover { background: #ebf5fe; border-color: transparent; }
-.btn--negative { color: var(--sapNegativeColor); }
-.btn--negative:hover { background: var(--sapErrorBackground); border-color: var(--sapNegativeColor); }
-.btn--sm { height: 1.75rem; font-size: 0.75rem; padding: 0 0.5rem; }
+.btn--transparent:hover { background: var(--brand-soft); border-color: transparent; }
+.btn--negative { color: var(--negative); }
+.btn--negative:hover { background: var(--negative-bg); border-color: var(--negative-line); }
+.btn--sm { height: 1.85rem; font-size: 0.75rem; padding: 0 0.55rem; border-radius: var(--radius-sm); }
 
-/* Segmented button */
-.segmented { display: inline-flex; border-radius: var(--sapElement_BorderCornerRadius); overflow: hidden; border: 1px solid var(--sapField_BorderColor); }
-.segmented button {
-  font-family: inherit; font-size: 0.8125rem;
-  height: 2.25rem; padding: 0 0.75rem;
-  border: none; border-right: 1px solid var(--sapField_BorderColor);
-  background: #fff; color: var(--sapBrandColor); cursor: pointer;
-}
-.segmented button:last-child { border-right: none; }
-.segmented button:hover { background: #ebf5fe; }
-.segmented button.is-active { background: var(--sapBrandColor); color: #fff; font-weight: 600; }
-
-/* Fiori switch */
-.switch { display: inline-flex; align-items: center; gap: 0.625rem; cursor: pointer; user-select: none; }
+/* Sakelar */
+.switch { display: inline-flex; align-items: center; gap: 0.65rem; cursor: pointer; user-select: none; }
 .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
 .switch__track {
-  width: 2.75rem; height: 1.375rem; border-radius: 1rem;
-  background: #e5e5e5; border: 1px solid var(--sapField_BorderColor);
-  position: relative; transition: background 0.15s ease, border-color 0.15s ease; flex: none;
+  width: 2.9rem; height: 1.5rem; border-radius: var(--pill);
+  background: #cdd7e3; border: none;
+  position: relative; transition: background .2s ease; flex: none;
+  box-shadow: inset 0 1px 2px rgba(20, 35, 55, .12);
 }
 .switch__track::after {
-  content: ""; position: absolute; top: 1px; left: 1px;
-  width: 1.125rem; height: 1.125rem; border-radius: 50%;
-  background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-  transition: transform 0.15s ease;
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 1.1rem; height: 1.1rem; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(20, 35, 55, .35);
+  transition: transform .2s cubic-bezier(.34, 1.4, .64, 1);
 }
-.switch input:checked + .switch__track { background: var(--sapPositiveColor); border-color: var(--sapPositiveColor); }
-.switch input:checked + .switch__track::after { transform: translateX(1.375rem); }
-.switch input:focus-visible + .switch__track { box-shadow: 0 0 0 2px var(--sapBrandColor); }
+.switch input:checked + .switch__track { background: var(--positive); }
+.switch input:checked + .switch__track::after { transform: translateX(1.4rem); }
+.switch input:focus-visible + .switch__track { box-shadow: 0 0 0 3px var(--brand-soft); }
 .switch__text { display: flex; flex-direction: column; }
 .switch__title { font-size: 0.875rem; font-weight: 600; }
-.switch__desc { font-size: 0.75rem; color: var(--sapContent_LabelColor); }
+.switch__desc { font-size: 0.75rem; color: var(--text-muted); }
 
 .setting-row {
   display: flex; align-items: center; gap: 1rem;
-  padding: 0.875rem 0;
-  border-bottom: 1px solid var(--sapList_BorderColor);
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
 }
-.setting-row:last-child { border-bottom: none; }
+.setting-row:last-child { border-bottom: none; padding-bottom: 0; }
+.setting-row:first-child { padding-top: 0; }
 .setting-row__main { flex: 1 1 auto; min-width: 0; }
-.setting-row__title { font-size: 0.875rem; font-weight: 600; }
-.setting-row__desc { font-size: 0.75rem; color: var(--sapContent_LabelColor); margin-top: 0.15rem; }
+.setting-row__title { font-size: 0.9375rem; font-weight: 600; }
+.setting-row__desc { font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.25rem; line-height: 1.45; }
 
 /* ---------------------------- Message Strip ---------------------------- */
 
 .strip {
-  display: flex; align-items: flex-start; gap: 0.5rem;
-  padding: 0.625rem 0.875rem;
-  border-radius: var(--sapElement_BorderCornerRadius);
-  border: 1px solid var(--sapInformationBorderColor);
-  background: var(--sapInformationBackground);
+  display: flex; align-items: flex-start; gap: 0.6rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--info-line);
+  background: var(--info-bg);
+  color: var(--text);
   font-size: 0.8125rem;
-  margin-bottom: 1rem;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-sm);
 }
-.strip--error { background: var(--sapErrorBackground); border-color: var(--sapErrorBorderColor); }
-.strip--warning { background: var(--sapWarningBackground); border-color: var(--sapWarningBorderColor); }
-.strip--success { background: var(--sapSuccessBackground); border-color: var(--sapSuccessBorderColor); }
-.strip__close { margin-left: auto; background: none; border: none; cursor: pointer; color: inherit; padding: 0; }
+.strip .icon { margin-top: .1rem; color: var(--info); }
+.strip--error { background: var(--negative-bg); border-color: var(--negative-line); }
+.strip--error .icon { color: var(--negative); }
+.strip--warning { background: var(--critical-bg); border-color: var(--critical-line); }
+.strip--warning .icon { color: var(--critical); }
+.strip--success { background: var(--positive-bg); border-color: var(--positive-line); }
+.strip--success .icon { color: var(--positive); }
+.strip__close {
+  margin-left: auto; background: none; border: none; cursor: pointer;
+  color: var(--text-muted); padding: 0; flex: none;
+}
+.strip__close:hover { color: var(--text); }
 
-/* ---------------------------- Table ---------------------------- */
+/* ---------------------------- Tabel ---------------------------- */
 
 .table-wrap { overflow-x: auto; }
 
@@ -354,174 +411,255 @@ table.ftable { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 table.ftable thead th {
   text-align: left;
   font-weight: 700;
-  color: var(--sapContent_LabelColor);
-  background: #fafafa;
-  padding: 0.625rem 0.75rem;
-  border-bottom: 1px solid var(--sapGroup_ContentBorderColor);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: .045em;
+  color: var(--text-muted);
+  background: var(--surface-alt);
+  padding: 0.7rem 0.85rem;
   white-space: nowrap;
   position: sticky; top: 0; z-index: 2;
+  box-shadow: inset 0 -1px 0 var(--border);
 }
 table.ftable thead th.num, table.ftable tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 table.ftable tbody td {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--sapList_BorderColor);
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
-table.ftable tbody tr:hover { background: #f0f5fa; }
-table.ftable tbody tr.row--minus { background: #fff7f7; }
-table.ftable tbody tr.row--minus:hover { background: #ffeaea; }
+table.ftable tbody tr { transition: background .12s ease; }
+table.ftable tbody tr:hover { background: var(--brand-soft); }
+table.ftable tbody tr:last-child td { border-bottom: none; }
 
-.obj-id { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
-.obj-id__title { font-weight: 700; color: var(--sapTextColor); }
+/* Tepi kiri berwarna menandai tingkat kegentingan tanpa menambah kolom. */
+table.ftable tbody td:first-child { box-shadow: inset 3px 0 0 transparent; }
+table.ftable tbody tr.row--minus td:first-child { box-shadow: inset 3px 0 0 var(--negative); }
+table.ftable tbody tr.row--minus { background: linear-gradient(90deg, var(--negative-bg) 0%, transparent 34%); }
+table.ftable tbody tr.row--minus:hover { background: linear-gradient(90deg, #ffdede 0%, var(--brand-soft) 34%); }
+
+.obj-id { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.obj-id__title { font-weight: 700; color: var(--text); letter-spacing: -.005em; }
 .obj-id__text {
-  color: var(--sapContent_LabelColor); font-size: 0.75rem;
+  color: var(--text-muted); font-size: 0.75rem;
   max-width: 34rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-.obj-num { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.obj-num--negative { color: var(--sapNegativeColor); }
-.obj-num--critical { color: var(--sapCriticalColor); }
-.obj-num--positive { color: var(--sapPositiveColor); }
-.obj-num--neutral { color: var(--sapNeutralColor); }
+.obj-num { font-size: 1.0625rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.obj-num--negative { color: var(--negative); }
+.obj-num--critical { color: var(--critical); }
+.obj-num--positive { color: var(--positive); }
+.obj-num--neutral { color: var(--neutral); }
 
+/* Status kini berbentuk pil berisi, bukan teks berwarna. */
 .status {
   display: inline-flex; align-items: center; gap: 0.35rem;
-  font-weight: 700; font-size: 0.75rem; white-space: nowrap;
+  font-weight: 700; font-size: 0.7rem;
+  letter-spacing: .03em; text-transform: uppercase;
+  padding: 0.25rem 0.6rem 0.25rem 0.45rem;
+  border-radius: var(--pill);
+  white-space: nowrap;
+  border: 1px solid transparent;
 }
-.status--MINUS { color: var(--sapNegativeColor); }
-.status--HABIS { color: var(--sapNegativeColor); }
-.status--TIPIS { color: var(--sapCriticalColor); }
-.status--AMAN  { color: var(--sapPositiveColor); }
+.status .icon { width: .8rem; height: .8rem; }
+.status--MINUS { color: var(--negative); background: var(--negative-bg); border-color: var(--negative-line); }
+.status--HABIS { color: var(--negative); background: var(--negative-bg); border-color: var(--negative-line); }
+.status--TIPIS { color: var(--critical); background: var(--critical-bg); border-color: var(--critical-line); }
+.status--AMAN  { color: var(--positive); background: var(--positive-bg); border-color: var(--positive-line); }
 
 .badge {
   display: inline-flex; align-items: center;
   font-size: 0.6875rem; font-weight: 700;
-  padding: 0.1rem 0.4rem; border-radius: 0.625rem;
-  border: 1px solid var(--sapGroup_ContentBorderColor);
-  background: var(--sapNeutralBackground);
-  color: var(--sapContent_LabelColor);
+  padding: 0.15rem 0.5rem; border-radius: var(--pill);
+  border: 1px solid var(--neutral-line);
+  background: var(--neutral-bg);
+  color: var(--text-muted);
   white-space: nowrap;
 }
-.badge--new { background: var(--sapInformationBackground); border-color: var(--sapInformationBorderColor); color: var(--sapInformativeColor); }
-.badge--override { background: #f6f0ff; border-color: #d6c4f5; color: #6b3fa0; }
-.badge--ready { background: var(--sapSuccessBackground); border-color: var(--sapSuccessBorderColor); color: var(--sapPositiveColor); }
-.badge--blocked { background: var(--sapErrorBackground); border-color: var(--sapErrorBorderColor); color: var(--sapNegativeColor); }
-.badge--inactive { background: #efefef; }
+.badge--new { background: var(--info-bg); border-color: var(--info-line); color: var(--info); }
+.badge--override { background: #f3edff; border-color: #ddcbfa; color: #6b3fa0; }
+.badge--ready { background: var(--positive-bg); border-color: var(--positive-line); color: var(--positive); }
+.badge--blocked { background: var(--negative-bg); border-color: var(--negative-line); color: var(--negative); }
+.badge--inactive { background: #eceff3; color: var(--text-subtle); }
 
-.delta { font-size: 0.75rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.delta--down { color: var(--sapNegativeColor); }
-.delta--up { color: var(--sapPositiveColor); }
-.delta--flat { color: var(--sapContent_DisabledTextColor); }
+.delta { font-size: 0.75rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.delta--down { color: var(--negative); }
+.delta--up { color: var(--positive); }
+.delta--flat { color: var(--text-subtle); font-weight: 400; }
 
-.empty { padding: 3rem 1rem; text-align: center; color: var(--sapContent_LabelColor); }
-.empty__title { font-size: 1rem; font-weight: 700; color: var(--sapTextColor); margin-bottom: 0.35rem; }
+/*
+ * Meteran kegentingan: seberapa jauh Qty Rack di bawah ambang, terbaca sekilas
+ * tanpa harus membandingkan dua angka.
+ */
+.meter {
+  width: 100%; max-width: 5.5rem; height: 5px;
+  background: var(--neutral-line); border-radius: var(--pill);
+  overflow: hidden; display: inline-block; vertical-align: middle;
+}
+.meter__fill { display: block; height: 100%; border-radius: var(--pill); }
+.meter__fill--negative { background: var(--negative); }
+.meter__fill--critical { background: var(--critical); }
+.meter__fill--positive { background: var(--positive); }
+
+.empty { padding: 3.5rem 1rem; text-align: center; color: var(--text-muted); }
+.empty .icon { color: var(--positive); width: 2rem; height: 2rem; margin-bottom: .5rem; }
+.empty__title { font-size: 1.0625rem; font-weight: 700; color: var(--text); margin-bottom: 0.35rem; }
 
 /* ---------------------------- Dialog ---------------------------- */
 
 .dialog-backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  position: fixed; inset: 0; background: rgba(13, 25, 40, .5);
+  backdrop-filter: blur(2px);
   display: grid; place-items: center; z-index: 200; padding: 1rem;
 }
 .dialog {
-  background: #fff; border-radius: var(--sapElement_BorderCornerRadius);
-  box-shadow: var(--sapShadow_Level2);
+  background: var(--surface); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   width: min(34rem, 100%); max-height: 90vh; display: flex; flex-direction: column;
+  overflow: hidden;
 }
 .dialog__head {
-  padding: 0.875rem 1rem; border-bottom: 1px solid var(--sapList_BorderColor);
+  padding: 1rem 1.25rem;
   display: flex; align-items: center; gap: 0.5rem;
+  box-shadow: inset 0 -1px 0 var(--border);
 }
-.dialog__title { font-size: 1rem; font-weight: 700; margin: 0; }
-.dialog__body { padding: 1rem; overflow: auto; }
+.dialog__title { font-size: 1.0625rem; font-weight: 700; margin: 0; }
+.dialog__body { padding: 1.25rem; overflow: auto; }
 .dialog__foot {
-  padding: 0.75rem 1rem; border-top: 1px solid var(--sapList_BorderColor);
-  display: flex; justify-content: flex-end; gap: 0.5rem; background: #fafafa;
+  padding: 0.9rem 1.25rem;
+  display: flex; justify-content: flex-end; gap: 0.5rem;
+  background: var(--surface-alt);
+  box-shadow: inset 0 1px 0 var(--border);
 }
 
 /* ---------------------------- Mode Slide ---------------------------- */
 
+/*
+ * Mode slide memakai skema gelap. Layar gudang menyala sepanjang hari, dan
+ * latar gelap membuat angka berwarna jauh lebih menonjol sekaligus mengurangi
+ * silau dari kejauhan.
+ */
 .slideshow {
   position: fixed; inset: 0; z-index: 300;
-  background: var(--sapBackgroundColor);
+  background: #0e1826;
+  color: #e6edf6;
   display: flex; flex-direction: column;
 }
 
 .slideshow__head {
-  background: var(--sapShellColor); color: #fff;
-  padding: 0.75rem 1.5rem;
+  background: linear-gradient(115deg, #0a2c5c 0%, #123f7d 100%);
+  color: #fff;
+  padding: 0.9rem 1.75rem;
   display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, .4);
 }
-.slideshow__title { font-size: 1.5rem; font-weight: 700; }
-.slideshow__meta { font-size: 0.9rem; opacity: 0.8; }
-.slideshow__counts { display: flex; gap: 1.25rem; margin-left: auto; align-items: center; }
-.slideshow__count { text-align: center; line-height: 1.15; }
-.slideshow__count b { display: block; font-size: 1.6rem; font-weight: 300; }
-.slideshow__count span { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.85; }
+.slideshow__title { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
+.slideshow__meta { font-size: 0.9rem; opacity: .78; margin-top: 2px; }
+.slideshow__counts { display: flex; gap: 1.75rem; margin-left: auto; align-items: center; }
+.slideshow__count { text-align: center; line-height: 1.1; }
+.slideshow__count b {
+  display: block; font-size: 1.9rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; letter-spacing: -.03em;
+}
+.slideshow__count span {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: .09em; opacity: .7;
+}
+.count--negative b { color: #ff8a8a; }
+.count--critical b { color: #ffbe5c; }
+.count--positive b { color: #5fe0a0; }
 
-.slideshow__progress { height: 4px; background: rgba(255,255,255,0.2); }
-.slideshow__bar { height: 100%; background: #7ab8f5; width: 0; }
-/* Digerakkan CSS, bukan requestAnimationFrame, supaya layar yang menyala
-   seharian tidak terus-menerus melakukan repaint lewat JavaScript. */
+.slideshow__progress { height: 4px; background: rgba(255, 255, 255, .1); }
+.slideshow__bar { height: 100%; background: linear-gradient(90deg, #4da3ff, #7fd4ff); width: 0; }
 .slideshow__bar.is-running { animation: slideProgress linear forwards; }
 @keyframes slideProgress { from { width: 0; } to { width: 100%; } }
 
-.slideshow__body { flex: 1 1 auto; overflow: hidden; padding: 0.75rem 1.5rem; }
+.slideshow__body { flex: 1 1 auto; overflow: hidden; padding: 0.85rem 1.75rem; }
 
 table.stable { width: 100%; border-collapse: collapse; font-size: 1.35rem; }
 table.stable thead th {
-  text-align: left; font-size: 0.85rem; text-transform: uppercase;
-  letter-spacing: 0.05em; color: var(--sapContent_LabelColor);
-  padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--sapGroup_ContentBorderColor);
+  text-align: left; font-size: 0.8rem; text-transform: uppercase;
+  letter-spacing: .09em; color: #8ba3c0; font-weight: 700;
+  padding: 0.5rem 0.85rem;
+  border-bottom: 2px solid rgba(255, 255, 255, .12);
 }
 table.stable thead th.num, table.stable tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
-table.stable tbody td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--sapList_BorderColor); }
-table.stable tbody tr.row--minus { background: #fff2f2; }
-table.stable .obj-id__title { font-size: 1.35rem; }
-table.stable .obj-id__text { font-size: 1rem; max-width: 46rem; }
-table.stable .obj-num { font-size: 1.6rem; }
-table.stable .status { font-size: 1.05rem; }
+table.stable tbody td {
+  padding: 0.62rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+}
+table.stable tbody tr.row--minus { background: linear-gradient(90deg, rgba(255, 90, 90, .16) 0%, transparent 40%); }
+table.stable tbody tr.row--minus td:first-child { box-shadow: inset 4px 0 0 #ff5a5a; }
+table.stable .obj-id__title { font-size: 1.35rem; color: #f2f6fb; }
+table.stable .obj-id__text { font-size: 1rem; max-width: 46rem; color: #8ba3c0; }
+table.stable .obj-num { font-size: 1.65rem; }
+table.stable .obj-num--negative { color: #ff7b7b; }
+table.stable .obj-num--critical { color: #ffbe5c; }
+table.stable .obj-num--positive { color: #5fe0a0; }
+table.stable .muted { color: #7a90ad; }
+table.stable .status {
+  font-size: 0.95rem; padding: 0.3rem 0.8rem 0.3rem 0.6rem;
+  border-width: 1px;
+}
+table.stable .status .icon { width: 1rem; height: 1rem; }
+table.stable .status--MINUS,
+table.stable .status--HABIS { color: #ff9a9a; background: rgba(255, 90, 90, .16); border-color: rgba(255, 122, 122, .4); }
+table.stable .status--TIPIS { color: #ffce85; background: rgba(255, 176, 60, .15); border-color: rgba(255, 190, 92, .38); }
+table.stable .status--AMAN  { color: #6fe6ab; background: rgba(60, 210, 140, .15); border-color: rgba(95, 224, 160, .36); }
+
+.bulk-ok { color: #5fe0a0; font-weight: 700; }
+.bulk-none { color: #ff7b7b; font-weight: 700; }
 
 .slideshow__foot {
-  padding: 0.6rem 1.5rem; background: #fff;
-  border-top: 1px solid var(--sapGroup_ContentBorderColor);
+  padding: 0.7rem 1.75rem;
+  background: #0a121e;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07);
   display: flex; align-items: center; gap: 0.75rem;
-  font-size: 0.85rem; color: var(--sapContent_LabelColor);
+  font-size: 0.85rem; color: #8ba3c0;
 }
-.slideshow__dots { display: flex; gap: 0.35rem; margin: 0 auto; }
-.slideshow__dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: #c9c9c9; }
-.slideshow__dot.is-active { background: var(--sapBrandColor); transform: scale(1.25); }
+.slideshow__dots { display: flex; gap: 0.4rem; margin: 0 auto; }
+.slideshow__dot {
+  width: 0.5rem; height: 0.5rem; border-radius: 50%;
+  background: rgba(255, 255, 255, .22); transition: background .2s ease, transform .2s ease;
+}
+.slideshow__dot.is-active { background: #4da3ff; transform: scale(1.35); }
+
+.slideshow .empty { color: #8ba3c0; }
+.slideshow .empty__title { color: #e6edf6; }
+.slideshow .empty .icon { color: #5fe0a0; }
 
 /* ---------------------------- Utilitas ---------------------------- */
 
 .row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.muted { color: var(--sapContent_LabelColor); }
+.muted { color: var(--text-muted); }
 .nowrap { white-space: nowrap; }
 .mono { font-variant-numeric: tabular-nums; }
 .hidden { display: none !important; }
-.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1rem; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: 1.25rem; }
 
 .spinner {
   width: 1rem; height: 1rem; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff;
-  animation: spin 0.7s linear infinite; flex: none;
+  border: 2px solid rgba(255, 255, 255, .3); border-top-color: #fff;
+  animation: spin .7s linear infinite; flex: none;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-@media (max-width: 900px) {
-  .shellbar__subtitle, .col-optional { display: none; }
-  .page { padding: 0.75rem; }
+@media (max-width: 1100px) {
+  .obj-id__text { max-width: 20rem; }
 }
 
-/* Hormati preferensi pengguna yang tidak nyaman dengan gerakan.
-   Slide tetap berpindah sesuai jadwal; hanya animasinya yang dihilangkan. */
+@media (max-width: 900px) {
+  .shellbar__subtitle, .col-optional { display: none; }
+  .page { padding: 0.85rem; }
+  .tile__value { font-size: 2rem; }
+}
+
+/* Hormati preferensi pengguna yang tidak nyaman dengan gerakan. */
 @media (prefers-reduced-motion: reduce) {
   .slideshow__bar.is-running { animation: none; width: 100%; }
   .dot--busy { animation: none; }
   .spinner { animation: none; border-top-color: transparent; }
-  .tile { transition: none; }
+  .tile, .btn, .shellbar__btn, .switch__track::after, table.ftable tbody tr { transition: none; }
   .tile:hover { transform: none; }
-  .switch__track::after { transition: none; }
 }
 
 @media print {

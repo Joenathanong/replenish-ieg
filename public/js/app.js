@@ -324,6 +324,24 @@ function emptyHtml() {
     </div>`;
 }
 
+/**
+ * Meteran seberapa dalam stok berada di bawah ambang.
+ *
+ * Hanya ditampilkan untuk status Tipis. Pada baris Minus dan Habis nilainya
+ * selalu maksimum sehingga batangnya seragam penuh — tidak membedakan apa pun
+ * dan hanya terbaca sebagai garis bawah. Status Aman jelas tidak memerlukannya.
+ */
+function meterHtml(i, m) {
+  if (i.status !== 'TIPIS' || !i.threshold || i.threshold <= 0) return '';
+
+  const pct = Math.max(8, Math.min(100, (1 - i.qtyRack / i.threshold) * 100));
+  const title = `Qty Rack ${fmt(i.qtyRack)} terhadap ambang ${fmt(i.threshold)}`;
+  return `
+    <span class="meter" title="${esc(title)}">
+      <span class="meter__fill meter__fill--${m.num}" style="width:${pct.toFixed(1)}%"></span>
+    </span>`;
+}
+
 function rowHtml(i) {
   const m = statusMeta(i.status);
   const deltaCls = i.delta === null ? 'flat' : i.delta < 0 ? 'down' : i.delta > 0 ? 'up' : 'flat';
@@ -348,7 +366,10 @@ function rowHtml(i) {
       </td>
       <td class="col-optional">${i.shopCode ? `<span class="badge">${esc(i.shopCode)}</span>` : '<span class="muted">—</span>'}</td>
       <td><span class="status status--${i.status}">${icon(m.icon)} ${m.label}</span></td>
-      <td class="num"><span class="obj-num obj-num--${m.num}">${fmt(i.qtyRack)}</span></td>
+      <td class="num">
+        <span class="obj-num obj-num--${m.num}">${fmt(i.qtyRack)}</span>
+        ${meterHtml(i, m)}
+      </td>
       <td class="num muted">${fmt(i.threshold)}</td>
       <td class="num"><b>${i.shortageQty > 0 ? fmt(i.shortageQty) : '—'}</b></td>
       <td class="num ${i.canReplenish ? '' : 'muted'}">${fmt(i.qtyBulk)}</td>
@@ -1061,15 +1082,15 @@ const slideshow = {
             <div class="slideshow__meta">
               Qty Rack (Gudang Kecil) · diperbarui ${fmtRelative(this.data.status?.lastSync?.finishedAt)}
               ${this.data.status?.staleness?.stale
-                ? `<b style="color:#ffb0b0"> · DATA TIDAK MUTAKHIR (${fmtDuration(this.data.status.staleness.ageMs)} lalu)</b>`
+                ? `<b class="count--negative" style="color:#ff8a8a"> · DATA TIDAK MUTAKHIR (${fmtDuration(this.data.status.staleness.ageMs)} lalu)</b>`
                 : ''}
             </div>
           </div>
           <div class="slideshow__counts">
-            <div class="slideshow__count"><b style="color:#ffb0b0">${fmt(summary.minus)}</b><span>Minus</span></div>
-            <div class="slideshow__count"><b style="color:#ffb0b0">${fmt(summary.habis)}</b><span>Kosong</span></div>
-            <div class="slideshow__count"><b style="color:#f5c884">${fmt(summary.tipis)}</b><span>Tipis</span></div>
-            <div class="slideshow__count"><b style="color:#abe2c2">${fmt(summary.bisaReplenish)}</b><span>Siap Transfer</span></div>
+            <div class="slideshow__count count--negative"><b>${fmt(summary.minus)}</b><span>Minus</span></div>
+            <div class="slideshow__count count--negative"><b>${fmt(summary.habis)}</b><span>Kosong</span></div>
+            <div class="slideshow__count count--critical"><b>${fmt(summary.tipis)}</b><span>Tipis</span></div>
+            <div class="slideshow__count count--positive"><b>${fmt(summary.bisaReplenish)}</b><span>Siap Transfer</span></div>
             <button class="shellbar__btn" id="slideClose" title="Keluar (Esc)">${icon('close', 'icon icon-lg')}</button>
           </div>
         </div>
@@ -1104,8 +1125,8 @@ const slideshow = {
                   <td class="num muted">${fmt(i.threshold)}</td>
                   <td class="num"><b>${fmt(i.shortageQty)}</b></td>
                   <td class="num">${i.canReplenish
-                    ? `<span style="color:var(--sapPositiveColor);font-weight:700">${fmt(i.qtyBulk)}</span>`
-                    : `<span style="color:var(--sapNegativeColor);font-weight:700">0</span>`}</td>
+                    ? `<span class="bulk-ok">${fmt(i.qtyBulk)}</span>`
+                    : `<span class="bulk-none">0</span>`}</td>
                 </tr>`;
               }).join('')}
             </tbody>
