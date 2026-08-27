@@ -287,7 +287,7 @@ export async function searchItems(query, limit = 30) {
 
 export async function getSyncHistory(limit = 20) {
   return all(
-    `SELECT id, started_at, finished_at, status, row_count, new_count, duration_ms, message
+    `SELECT id, started_at, finished_at, status, trigger_source, row_count, new_count, duration_ms, message
        FROM sync_log
       ORDER BY started_at DESC
       LIMIT ${safeLimit(limit, 20, 200)}`,

@@ -881,6 +881,25 @@ async function refreshCurrentTab() {
 
 // ---------------------------- Tab: Riwayat sinkronisasi ----------------------------
 
+/**
+ * Menerjemahkan pemicu sinkronisasi ke label yang mudah dibaca.
+ * Berguna untuk memastikan penarikan otomatis benar-benar jalan: kalau seluruh
+ * baris berlabel "Manual", berarti worker terjadwalnya tidak hidup.
+ */
+function triggerBadge(source) {
+  const map = {
+    worker:    ['Worker',   'badge--ready',  'Worker terjadwal di PC gudang'],
+    scheduler: ['Terjadwal','badge--ready',  'Penjadwal internal server'],
+    startup:   ['Startup',  '',              'Saat server dinyalakan'],
+    manual:    ['Manual',   'badge--new',    'Tombol Sinkron di web'],
+    cron:      ['Cron',     'badge--ready',  'Pemicu terjadwal dari luar'],
+    cli:       ['CLI',      '',              'Dijalankan dari baris perintah'],
+  };
+  const [label, cls, title] = map[source] || [source || '—', '', ''];
+  if (!source) return '<span class="muted">—</span>';
+  return `<span class="badge ${cls}" title="${esc(title)}">${esc(label)}</span>`;
+}
+
 function renderSyncLog() {
   const rows = state.syncLog;
   $('#main').innerHTML = `
@@ -893,7 +912,7 @@ function renderSyncLog() {
             <table class="ftable">
               <thead>
                 <tr>
-                  <th>Mulai</th><th>Status</th><th class="num">Baris</th>
+                  <th>Mulai</th><th>Status</th><th>Pemicu</th><th class="num">Baris</th>
                   <th class="num">Item Baru</th><th class="num">Durasi</th><th>Keterangan</th>
                 </tr>
               </thead>
@@ -907,6 +926,7 @@ function renderSyncLog() {
                         ${r.status === 'success' ? 'Berhasil' : r.status === 'error' ? 'Gagal' : 'Berjalan'}
                       </span>
                     </td>
+                    <td>${triggerBadge(r.trigger_source)}</td>
                     <td class="num mono">${r.row_count === null ? '—' : fmt(r.row_count)}</td>
                     <td class="num mono">${r.new_count === null ? '—' : fmt(r.new_count)}</td>
                     <td class="num mono">${r.duration_ms === null ? '—' : `${fmt(r.duration_ms)} ms`}</td>

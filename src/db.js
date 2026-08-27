@@ -147,6 +147,7 @@ export const SCHEMA_STATEMENTS = [
      started_at  VARCHAR(30)  NOT NULL,
      finished_at VARCHAR(30)  NULL,
      status      VARCHAR(16)  NOT NULL,
+     trigger_source VARCHAR(20) NULL,
      row_count   INT          NULL,
      new_count   INT          NULL,
      duration_ms INT          NULL,
@@ -156,8 +157,24 @@ export const SCHEMA_STATEMENTS = [
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 ];
 
+/**
+ * Tambahkan kolom bila belum ada.
+ *
+ * `CREATE TABLE IF NOT EXISTS` tidak menyentuh tabel yang sudah terlanjur dibuat,
+ * sehingga penambahan kolom pada versi berikutnya perlu ditangani terpisah.
+ */
+async function ensureColumn(table, column, definition) {
+  const row = await one(
+    `SELECT COUNT(*) AS c FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+    [table, column],
+  );
+  if (!row.c) await run(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+
 export async function ensureSchema() {
   for (const stmt of SCHEMA_STATEMENTS) await run(stmt);
+  await ensureColumn('sync_log', 'trigger_source', 'VARCHAR(20) NULL');
   await seedSettings();
 }
 

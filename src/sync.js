@@ -120,10 +120,10 @@ export async function runSync({ trigger = 'scheduler' } = {}) {
   const startedAtIso = new Date().toISOString();
   const t0 = Date.now();
 
-  const logInsert = await run('INSERT INTO sync_log (started_at, status) VALUES (?, ?)', [
-    startedAtIso,
-    'running',
-  ]);
+  const logInsert = await run(
+    'INSERT INTO sync_log (started_at, status, trigger_source) VALUES (?, ?, ?)',
+    [startedAtIso, 'running', String(trigger).slice(0, 20)],
+  );
   const logId = logInsert.insertId;
 
   try {
