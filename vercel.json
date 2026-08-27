@@ -6,5 +6,9 @@
     "api/**/*.js": {
       "maxDuration": 120
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/((?!api/|css/|js/).*)", "destination": "/index.html" }
+  ]
 }

@@ -89,8 +89,22 @@ server.listen(config.server.port, config.server.host, async () => {
     console.log(`  Interval   : ${settings.poll_interval_minutes} menit`);
     console.log(`  Ambang     : ${settings.default_thin_threshold} (default global)`);
     console.log('');
-    await startScheduler({ syncOnBoot: true });
-    console.log(`[boot] siap. Sinkronisasi berikutnya: ${getNextRunAt() || 'nonaktif'}`);
+
+    /*
+     * Penjadwal internal hanya boleh hidup pada proses yang benar-benar berjalan
+     * terus-menerus. Vercel dapat menjalankan berkas ini sebagai server, dan di
+     * sana prosesnya dimatikan lalu dihidupkan lagi sesuka platform — setiap
+     * cold start akan memicu sinkronisasi baru dan menjadikannya penulis kedua
+     * yang berebut dengan worker di PC gudang. Penarikan data di lingkungan itu
+     * adalah tugas worker, bukan tugas server tampilan.
+     */
+    if (config.isServerless) {
+      console.log('[boot] terdeteksi berjalan di Vercel — penjadwal internal tidak dinyalakan.');
+      console.log('[boot] penarikan data ditangani worker (npm run worker) di mesin terpisah.');
+    } else {
+      await startScheduler({ syncOnBoot: true });
+      console.log(`[boot] siap. Sinkronisasi berikutnya: ${getNextRunAt() || 'nonaktif'}`);
+    }
   } catch (err) {
     console.error('\n  Gagal menyiapkan database:', err.message, '\n');
     process.exit(1);
