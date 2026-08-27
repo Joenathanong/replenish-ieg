@@ -25,7 +25,14 @@ const MIME = {
 };
 
 async function serveStatic(req, res, pathname) {
-  const rel = pathname === '/' ? '/index.html' : pathname;
+  /*
+   * `isRoot` harus dicatat sebelum pemetaan di bawah. Untuk "/", `rel` berubah
+   * menjadi "/index.html" yang berekstensi, sehingga pemeriksaan `!extname(rel)`
+   * pada blok fallback akan gagal dan halaman depan jatuh ke 404 — meski rute
+   * lain tanpa ekstensi tertangani dengan benar.
+   */
+  const isRoot = pathname === '/';
+  const rel = isRoot ? '/index.html' : pathname;
   const target = normalize(join(PUBLIC_DIR, rel));
   if (!target.startsWith(PUBLIC_DIR + sep) && target !== PUBLIC_DIR) {
     return sendText(res, 403, 'Terlarang');
@@ -36,8 +43,8 @@ async function serveStatic(req, res, pathname) {
     res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache' });
     res.end(data);
   } catch {
-    // SPA fallback: rute apa pun yang bukan berkas dikembalikan ke index.html.
-    if (!extname(rel)) {
+    // SPA fallback: halaman depan dan rute tanpa ekstensi dikembalikan ke index.html.
+    if (isRoot || !extname(rel)) {
       try {
         const html = await readFile(join(PUBLIC_DIR, 'index.html'));
         res.writeHead(200, { 'Content-Type': MIME['.html'], 'Cache-Control': 'no-cache' });
@@ -49,10 +56,11 @@ async function serveStatic(req, res, pathname) {
          * Alihkan saja ke /index.html, yang dijamin ada di CDN. Aplikasi memakai
          * rute berbasis hash, jadi tidak ada informasi rute yang hilang.
          *
-         * Penjaga `rel !== '/index.html'` mencegah pengalihan berputar seandainya
-         * permintaan itu sendiri yang sampai ke sini.
+         * Penjaga di bawah memakai `pathname`, bukan `rel`, karena untuk "/"
+         * nilai `rel` sudah menjadi "/index.html" — memakai `rel` akan memblokir
+         * pengalihan justru pada halaman depan, kasus yang paling membutuhkannya.
          */
-        if (rel !== '/index.html') {
+        if (pathname !== '/index.html') {
           res.writeHead(302, { Location: '/index.html', 'Cache-Control': 'no-store' });
           return res.end();
         }
