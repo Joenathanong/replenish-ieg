@@ -99,29 +99,87 @@ export async function getToken(force = false) {
   return inFlightLogin;
 }
 
-/** GET terautentikasi dengan satu kali retry setelah re-login bila kena 401. */
-async function authedGet(path, timeoutMs = 90_000) {
-  let token = await getToken();
-  let res = await requestJson(`${baseUrl}${path}`, {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${token}` },
-  }, timeoutMs);
+/**
+ * Status yang layak dicoba ulang: gangguan sesaat di sisi server atau gateway,
+ * bukan kesalahan permintaan kita. 520-524 khas Cloudflare yang berada di depan OCS.
+ */
+const TRANSIENT_STATUS = new Set([408, 425, 429, 502, 503, 504, 520, 521, 522, 523, 524]);
 
-  if (res.status === 401) {
-    token = await getToken(true);
-    res = await requestJson(`${baseUrl}${path}`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${token}` },
-    }, timeoutMs);
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * GET terautentikasi.
+ *
+ * Dua lapis pemulihan:
+ *   1. Kena 401  -> login ulang lalu coba lagi sekali.
+ *   2. Kena gangguan sesaat (502/503/504, timeout, koneksi putus)
+ *      -> coba lagi dengan jeda menaik.
+ *
+ * OCS terbukti kadang menjawab 502 atau baru merespons setelah 20 detik. Tanpa
+ * percobaan ulang, satu gangguan sekejap membatalkan seluruh sinkronisasi dan
+ * data baru diperbarui pada putaran berikutnya.
+ */
+async function authedGet(path, timeoutMs = 90_000, attempts = 3) {
+  let lastMessage = 'tidak diketahui';
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    let transient = false;
+
+    try {
+      let token = await getToken();
+      let res = await requestJson(`${baseUrl}${path}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+      }, timeoutMs);
+
+      if (res.status === 401) {
+        token = await getToken(true);
+        res = await requestJson(`${baseUrl}${path}`, {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${token}` },
+        }, timeoutMs);
+      }
+
+      if (res.ok) return res.data;
+
+      lastMessage = `HTTP ${res.status}`;
+      transient = TRANSIENT_STATUS.has(res.status);
+      if (!transient) throw new Error(`GET ${path} gagal (${lastMessage})`);
+    } catch (err) {
+      // Kegagalan jaringan dan timeout tidak punya status; keduanya sesaat.
+      if (!transient && !/HTTP \d+/.test(err.message)) {
+        lastMessage = err.message;
+        transient = true;
+      }
+      if (!transient) throw err;
+    }
+
+    if (attempt === attempts) break;
+
+    // Jeda menaik dengan sedikit acak, supaya beberapa proses tidak serentak
+    // menghantam server yang sedang pulih.
+    const wait = Math.round(2000 * 2 ** (attempt - 1) * (0.75 + Math.random() * 0.5));
+    console.warn(`[ocs] ${path} ${lastMessage}; coba lagi ${attempt + 1}/${attempts} dalam ${wait} ms`);
+    await delay(wait);
   }
 
-  if (!res.ok) throw new Error(`GET ${path} gagal (HTTP ${res.status})`);
-  return res.data;
+  throw new Error(`GET ${path} gagal setelah ${attempts} percobaan (${lastMessage})`);
 }
+
+/**
+ * Anggaran waktu berbeda menurut tempat berjalannya.
+ *
+ * Function Vercel dibatasi 120 detik, sehingga percobaan ulang harus muat di
+ * dalamnya. Worker di PC gudang tidak punya batas itu dan boleh lebih sabar,
+ * karena lebih baik menunggu daripada melewatkan satu putaran penuh.
+ */
+const RETRY_BUDGET = config.isServerless
+  ? { timeoutMs: 35_000, attempts: 2 }
+  : { timeoutMs: 90_000, attempts: 3 };
 
 /** Snapshot penuh stok. Dataset ~2.500 baris / 760 KB, jadi tidak perlu paging. */
 export async function fetchStock() {
-  const data = await authedGet(`/odata/${stockEntity}`);
+  const data = await authedGet(`/odata/${stockEntity}`, RETRY_BUDGET.timeoutMs, RETRY_BUDGET.attempts);
   const rows = Array.isArray(data) ? data : data?.value;
   if (!Array.isArray(rows)) throw new Error('Format respons OData tidak dikenali');
   return rows;
@@ -129,7 +187,9 @@ export async function fetchStock() {
 
 /** Master setting item; dipakai untuk memetakan SKU ke brand (ShopCode). */
 export async function fetchItemSettings() {
-  const data = await authedGet('/Stock/WmsItemSettings', 60_000);
+  // Hanya pelengkap tampilan, jadi cukup satu percobaan agar tidak memakan
+  // anggaran waktu yang dibutuhkan penarikan stok.
+  const data = await authedGet('/Stock/WmsItemSettings', 30_000, 1);
   return Array.isArray(data) ? data : [];
 }
 
