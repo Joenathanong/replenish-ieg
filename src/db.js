@@ -17,9 +17,63 @@ export function getPool() {
   return pool;
 }
 
+/**
+ * Gangguan koneksi yang layak dicoba ulang.
+ *
+ * TiDB Serverless menutup koneksi yang menganggur, dan jaringan sesekali putus.
+ * Tanpa penanganan ini satu ECONNRESET menjatuhkan seluruh proses — worker yang
+ * berjalan sepanjang hari pasti menemuinya cepat atau lambat.
+ */
+const TRANSIENT_DB_ERRORS = new Set([
+  'PROTOCOL_CONNECTION_LOST',
+  'ECONNRESET',
+  'EPIPE',
+  'ETIMEDOUT',
+  'ER_LOCK_DEADLOCK',
+  'ER_LOCK_WAIT_TIMEOUT',
+  'ER_QUERY_INTERRUPTED',
+]);
+
+const isTransient = (err) =>
+  TRANSIENT_DB_ERRORS.has(err?.code) ||
+  /ECONNRESET|EPIPE|connection lost|closed state|Pool is closed/i.test(err?.message || '');
+
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Menjalankan satu perintah dengan percobaan ulang bila koneksinya terputus.
+ *
+ * Hanya dipakai untuk perintah tunggal lewat pool. Semua penulisan di aplikasi
+ * ini berbentuk upsert atau penghapusan berdasarkan kunci, jadi mengulanginya
+ * tidak mengubah hasil. Transaksi sengaja tidak ikut — mengulang sebagian
+ * transaksi tidak aman, dan pemanggilnya yang harus memutuskan.
+ */
+async function execute(sql, params, attempts = 3) {
+  let lastErr;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await getPool().query(sql, params);
+    } catch (err) {
+      lastErr = err;
+      if (!isTransient(err) || attempt === attempts) throw err;
+
+      // Koneksi yang rusak dibuang bersama pool-nya; pool baru dibuat saat
+      // percobaan berikutnya memanggil getPool().
+      if (err.code === 'PROTOCOL_CONNECTION_LOST' || /Pool is closed/i.test(err.message || '')) {
+        try { await closePool(); } catch { /* abaikan */ }
+      }
+
+      const wait = 400 * 2 ** (attempt - 1);
+      console.warn(`[db] ${err.code || err.message}; coba lagi ${attempt + 1}/${attempts} dalam ${wait} ms`);
+      await pause(wait);
+    }
+  }
+  throw lastErr;
+}
+
 /** SELECT -> array baris. */
 export async function all(sql, params = []) {
-  const [rows] = await getPool().query(sql, params);
+  const [rows] = await execute(sql, params);
   return rows;
 }
 
@@ -31,7 +85,7 @@ export async function one(sql, params = []) {
 
 /** INSERT/UPDATE/DELETE -> ResultSetHeader. */
 export async function run(sql, params = []) {
-  const [result] = await getPool().query(sql, params);
+  const [result] = await execute(sql, params);
   return result;
 }
 

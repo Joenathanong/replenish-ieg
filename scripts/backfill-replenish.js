@@ -32,10 +32,33 @@ try {
     let totalGagal = 0;
     let putaran = 0;
 
+    let gagalBerturut = 0;
+
     while (sisa > 0) {
       putaran++;
       const t = Date.now();
-      const hasil = await syncDocDetails({ limit: 300 });
+
+      let hasil;
+      try {
+        hasil = await syncDocDetails({ limit: 300 });
+        gagalBerturut = 0;
+      } catch (err) {
+        /*
+         * Satu putaran yang gagal tidak boleh menjatuhkan seluruh pengambilan.
+         * Kemajuan sudah tersimpan di database, jadi cukup tunggu sebentar lalu
+         * lanjutkan dari titik yang sama.
+         */
+        gagalBerturut++;
+        if (gagalBerturut >= 5) {
+          console.log(`    Gagal ${gagalBerturut} kali berturut-turut (${err.message}); dihentikan.`);
+          console.log('    Jalankan ulang perintah ini untuk melanjutkan.');
+          break;
+        }
+        const jeda = Math.min(60, 5 * 2 ** (gagalBerturut - 1));
+        console.log(`    putaran ${String(putaran).padStart(3)} : GAGAL ${err.message}; menunggu ${jeda} detik`);
+        await new Promise((r) => setTimeout(r, jeda * 1000));
+        continue;
+      }
 
       totalBaris += hasil.lines;
       totalGagal += hasil.failed;
