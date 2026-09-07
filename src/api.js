@@ -18,6 +18,14 @@ import {
   getStaleness,
 } from './sync.js';
 import { testConnection } from './ocs.js';
+import {
+  getReplenishSummary,
+  searchBySku,
+  listDocs,
+  getDoc,
+  suggestSku,
+} from './replenish-query.js';
+import { syncReplenish, countPendingDetails } from './replenish.js';
 
 /** Batas nilai yang boleh disimpan, supaya UI tidak bisa mengirim angka merusak. */
 const SETTING_RULES = {
@@ -295,6 +303,49 @@ export async function handleApi(req, res, url) {
     if (!sku) return sendJson(res, 400, { error: 'Parameter sku wajib diisi' });
     await clearThreshold(sku, areaId);
     return sendJson(res, 200, { ok: true, sku, areaId });
+  }
+
+  // ---------- transaksi replenish ----------
+
+  if (pathname === '/api/replenish/summary' && method === 'GET') {
+    return sendJson(res, 200, await getReplenishSummary());
+  }
+
+  if (pathname === '/api/replenish/search' && method === 'GET') {
+    const q = url.searchParams.get('sku') || '';
+    if (!q.trim()) return sendJson(res, 400, { error: 'Parameter sku wajib diisi' });
+    return sendJson(res, 200, await searchBySku(q, {
+      limit: Number(url.searchParams.get('limit')) || 200,
+      from: url.searchParams.get('from') || null,
+      to: url.searchParams.get('to') || null,
+    }));
+  }
+
+  if (pathname === '/api/replenish/suggest' && method === 'GET') {
+    return sendJson(res, 200, await suggestSku(url.searchParams.get('q') || ''));
+  }
+
+  if (pathname === '/api/replenish/docs' && method === 'GET') {
+    return sendJson(res, 200, await listDocs({
+      status: url.searchParams.get('status'),
+      search: url.searchParams.get('search'),
+      limit: Number(url.searchParams.get('limit')) || 100,
+    }));
+  }
+
+  if (pathname.startsWith('/api/replenish/doc/') && method === 'GET') {
+    const id = decodeURIComponent(pathname.slice('/api/replenish/doc/'.length));
+    const doc = await getDoc(id);
+    if (!doc) return sendJson(res, 404, { error: 'Dokumen tidak ditemukan' });
+    return sendJson(res, 200, doc);
+  }
+
+  if (pathname === '/api/replenish/sync' && method === 'POST') {
+    // Batas detail per pemanggilan dibuat kecil di serverless agar muat dalam
+    // anggaran waktu function.
+    const detailLimit = config.isServerless ? 40 : 300;
+    const result = await syncReplenish({ detailLimit });
+    return sendJson(res, 200, { ...result, sisaDetail: await countPendingDetails() });
   }
 
   return sendJson(res, 404, { error: 'Endpoint tidak ditemukan' });

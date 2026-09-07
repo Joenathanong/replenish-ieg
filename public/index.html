@@ -26,6 +26,8 @@
   <symbol id="i-search" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></symbol>
   <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 21 5 14h4V3h6v11h4z"/></symbol>
   <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m12 3 7 7h-4v11H9V10H5z"/></symbol>
+  <symbol id="i-truck" viewBox="0 0 24 24"><path d="M18 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM19.5 9.5h-3V12h5.46zM6 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM20 8l3 4v5h-2a3 3 0 0 1-6 0H9a3 3 0 0 1-6 0H1V6a2 2 0 0 1 2-2h12v4z"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM8 13h8v2H8zm0 4h8v2H8z"/></symbol>
   <symbol id="i-expand" viewBox="0 0 24 24"><path d="M3 3h8v2H5v6H3zm10 0h8v8h-2V5h-6zm6 10h2v8h-8v-2h6zM5 13v6h6v2H3v-8z"/></symbol>
 </svg>
 
@@ -57,6 +59,9 @@
   <button class="tabbar__item" data-tab="ambang">
     <svg class="icon"><use href="#i-box"/></svg> Ambang per Item
   </button>
+  <button class="tabbar__item" data-tab="transaksi">
+    <svg class="icon"><use href="#i-truck"/></svg> Transaksi Replenish
+  </button>
   <button class="tabbar__item" data-tab="riwayat">
     <svg class="icon"><use href="#i-history"/></svg> Riwayat Sinkronisasi
   </button>
@@ -67,6 +72,7 @@
 <div id="dialogHost"></div>
 <div id="slideHost"></div>
 
+<script src="/js/replenish-tab.js"></script>
 <script src="/js/app.js"></script>
 </body>
 </html>

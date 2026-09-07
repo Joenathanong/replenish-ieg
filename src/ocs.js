@@ -193,6 +193,58 @@ export async function fetchItemSettings() {
   return Array.isArray(data) ? data : [];
 }
 
+// -------------------- riwayat replenish --------------------
+
+/**
+ * Log replenish per bin (DTO_HistoryReplenish).
+ *
+ * Tabel ini hanya bertambah dan Id-nya berurutan, jadi cukup mengambil baris
+ * yang Id-nya lebih besar dari yang terakhir tersimpan. `sinceId` sengaja
+ * diberi mundur sedikit oleh pemanggil: baris dengan Id lebih kecil bisa saja
+ * baru selesai tersimpan setelah baris ber-Id besar, dan penulisan bersifat
+ * upsert sehingga tumpang tindih tidak menimbulkan duplikat.
+ */
+export async function fetchReplenishLog(sinceId = 0) {
+  const filter = sinceId > 0 ? `&$filter=Id gt ${Math.trunc(sinceId)}` : '';
+  const data = await authedGet(
+    `/odata/DTO_HistoryReplenish?$orderby=Id${filter}`,
+    RETRY_BUDGET.timeoutMs,
+    RETRY_BUDGET.attempts,
+  );
+  const rows = Array.isArray(data) ? data : data?.value;
+  if (!Array.isArray(rows)) throw new Error('Format respons DTO_HistoryReplenish tidak dikenali');
+  return rows;
+}
+
+/**
+ * Dokumen Inventory Transfer (DTO_HistoryReplenishITHead).
+ * Kuncinya GUID sehingga tidak bisa diurutkan menaik seperti Id; penyaringnya
+ * memakai CreatedAt, juga dengan tenggang mundur dari pemanggil.
+ */
+export async function fetchReplenishDocs(sinceIso = null) {
+  const filter = sinceIso ? `&$filter=CreatedAt gt ${sinceIso}` : '';
+  const data = await authedGet(
+    `/odata/DTO_HistoryReplenishITHead?$orderby=CreatedAt${filter}`,
+    RETRY_BUDGET.timeoutMs,
+    RETRY_BUDGET.attempts,
+  );
+  const rows = Array.isArray(data) ? data : data?.value;
+  if (!Array.isArray(rows)) throw new Error('Format respons DTO_HistoryReplenishITHead tidak dikenali');
+  return rows;
+}
+
+/**
+ * Baris detail satu dokumen. Hanya tersedia satu per satu — tidak ada entity
+ * OData untuk barisnya — sehingga pengambilan awal harus ditarik bertahap.
+ */
+export async function fetchReplenishDocDetail(id) {
+  const data = await authedGet(`/Stock/ReplenishHistory/${encodeURIComponent(id)}`, 30_000, 2);
+  return {
+    head: data,
+    lines: Array.isArray(data?.Details) ? data.Details : [],
+  };
+}
+
 export async function testConnection() {
   const started = Date.now();
   const token = await getToken(true);

@@ -1,5 +1,6 @@
 import { ensureSchema, getSettings, closePool } from './db.js';
 import { runSync, INSTANCE_ID } from './sync.js';
+import { syncReplenish, countPendingDetails } from './replenish.js';
 import { config } from './config.js';
 
 /**
@@ -46,6 +47,24 @@ async function tick() {
         `berhasil — ${result.rows} baris, ${result.changedItems} berubah, ` +
         `${result.newItems} baru, ${result.removedItems} dihapus (${result.durationMs} ms)`,
       );
+
+      /*
+       * Riwayat replenish ditarik setelah stok, dan kegagalannya tidak boleh
+       * menjatuhkan putaran: stok adalah data utama yang menggerakkan dashboard,
+       * sedangkan riwayat bisa menyusul pada putaran berikutnya.
+       */
+      try {
+        const rep = await syncReplenish({ detailLimit: 300 });
+        const sisa = await countPendingDetails();
+        log(
+          `replenish — ${rep.binLog.stored} log rak, ${rep.docs.stored} dokumen, ` +
+          `${rep.details.processed} detail (${rep.details.lines} baris)` +
+          (sisa ? `, sisa antrean ${sisa}` : '') +
+          ` (${rep.durationMs} ms)`,
+        );
+      } catch (err) {
+        log('replenish GAGAL —', err.message);
+      }
     } else {
       consecutiveFailures++;
       log(`GAGAL (ke-${consecutiveFailures}) —`, result.error);

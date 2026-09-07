@@ -180,6 +180,9 @@ async function render() {
       state.thresholds = await api('/api/thresholds');
       if (!state.settings) state.settings = (await api('/api/settings')).settings;
       renderThresholds();
+    } else if (state.tab === 'transaksi') {
+      // Didefinisikan di replenish-tab.js, dimuat sebelum berkas ini.
+      await renderTransaksi();
     } else if (state.tab === 'riwayat') {
       state.syncLog = await api('/api/sync-log?limit=30');
       renderSyncLog();
@@ -1153,7 +1156,7 @@ const slideshow = {
 
 // ---------------------------- Routing ----------------------------
 
-const TABS = ['monitoring', 'pengaturan', 'ambang', 'riwayat'];
+const TABS = ['monitoring', 'pengaturan', 'ambang', 'transaksi', 'riwayat'];
 
 /**
  * Rute berbasis hash supaya tiap tab bisa di-bookmark.
@@ -1170,6 +1173,17 @@ async function applyHash() {
   }
 
   if (slideshow.active) slideshow.stop();
+
+  // Rute "transaksi/<sku>" membuka tab Transaksi Replenish langsung pada hasil
+  // pencarian SKU tersebut, sehingga tautannya bisa dibagikan atau di-bookmark.
+  const [namaTab, ...sisa] = hash.split('/');
+  if (namaTab === 'transaksi') {
+    const sku = decodeURIComponent(sisa.join('/') || '');
+    if (typeof setReplenishQuery === 'function') setReplenishQuery(sku);
+    if (state.tab !== 'transaksi') setTab('transaksi');
+    else render();
+    return;
+  }
 
   const tab = TABS.includes(hash) ? hash : 'monitoring';
   if (tab !== state.tab || !state.data) setTab(tab);

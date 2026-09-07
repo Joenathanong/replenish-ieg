@@ -142,6 +142,66 @@ export const SCHEMA_STATEMENTS = [
      PRIMARY KEY (id)
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 
+  /*
+   * Riwayat replenish per bin (DTO_HistoryReplenish di OCS).
+   * Hanya bertambah, Id-nya berurutan, sehingga disinkronkan secara inkremental.
+   */
+  `CREATE TABLE IF NOT EXISTS replenish_bin_log (
+     id         BIGINT       NOT NULL,
+     seller_sku VARCHAR(120) COLLATE utf8mb4_bin NOT NULL,
+     bin_code   VARCHAR(60)  NULL,
+     move_type  VARCHAR(16)  NULL,
+     qty        INT          NOT NULL DEFAULT 0,
+     created_at VARCHAR(30)  NOT NULL,
+     created_by VARCHAR(60)  NULL,
+     PRIMARY KEY (id),
+     KEY idx_binlog_sku (seller_sku, created_at),
+     KEY idx_binlog_time (created_at),
+     KEY idx_binlog_bin (bin_code)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  /*
+   * Dokumen Inventory Transfer ke SAP (DTO_HistoryReplenishITHead).
+   * `detail_synced_at` kosong berarti baris detailnya belum ditarik — dipakai
+   * antrean penarikan bertahap, karena detail hanya bisa diambil satu per satu.
+   */
+  `CREATE TABLE IF NOT EXISTS replenish_doc (
+     id               CHAR(36)     NOT NULL,
+     apdraft_id       INT          NULL,
+     from_whs         VARCHAR(30)  NULL,
+     to_whs           VARCHAR(30)  NULL,
+     tgl_dok          VARCHAR(10)  NULL,
+     tgl_post         VARCHAR(10)  NULL,
+     remark           VARCHAR(255) NULL,
+     status           VARCHAR(20)  NULL,
+     doc_num          VARCHAR(40)  NULL,
+     error_message    TEXT         NULL,
+     created_by       VARCHAR(60)  NULL,
+     created_at       VARCHAR(30)  NOT NULL,
+     posted_at        VARCHAR(30)  NULL,
+     detail_synced_at VARCHAR(30)  NULL,
+     line_count       INT          NULL,
+     PRIMARY KEY (id),
+     KEY idx_doc_time (created_at),
+     KEY idx_doc_num (doc_num),
+     KEY idx_doc_status (status),
+     KEY idx_doc_pending (detail_synced_at)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  /* Baris detail dokumen; inilah yang membuat dokumen bisa dicari per SKU. */
+  `CREATE TABLE IF NOT EXISTS replenish_doc_line (
+     id          CHAR(36)     NOT NULL,
+     head_id     CHAR(36)     NOT NULL,
+     row_id      INT          NULL,
+     seller_sku  VARCHAR(120) COLLATE utf8mb4_bin NULL,
+     kode_barang VARCHAR(60)  NULL,
+     jumlah      INT          NOT NULL DEFAULT 0,
+     satuan      VARCHAR(20)  NULL,
+     PRIMARY KEY (id),
+     KEY idx_line_head (head_id),
+     KEY idx_line_sku (seller_sku)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
   `CREATE TABLE IF NOT EXISTS sync_log (
      id          BIGINT       NOT NULL AUTO_INCREMENT,
      started_at  VARCHAR(30)  NOT NULL,

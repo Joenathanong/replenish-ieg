@@ -35,6 +35,7 @@ dengan worker di PC gudang dan dashboard di Vercel.
 | `npm run check-db` | Uji koneksi, TLS, tulis, baca, hapus |
 | `npm run sync-once` | Tarik satu snapshot lalu keluar |
 | `npm run import-sqlite` | Pindahkan data dari database SQLite versi lama |
+| `npm run backfill-replenish` | Tarik seluruh riwayat transaksi replenish dari OCS |
 
 ### Konfigurasi
 
@@ -177,6 +178,48 @@ Semua endpoint mengembalikan JSON kecuali `export.csv`.
 | `GET` `PUT` | `/api/settings` | Baca / ubah pengaturan |
 | `GET` `PUT` `DELETE` | `/api/thresholds` | Kelola ambang khusus per item |
 | `GET` | `/api/sync-log` | Riwayat penarikan data |
+| `GET` | `/api/replenish/summary` | Ringkasan transaksi replenish |
+| `GET` | `/api/replenish/search?sku=` | Cari transaksi per SKU (log rak + baris dokumen) |
+| `GET` | `/api/replenish/docs` | Daftar dokumen transfer (`status`, `search`) |
+| `GET` | `/api/replenish/doc/:id` | Satu dokumen beserta baris detailnya |
+| `POST` | `/api/replenish/sync` | Tarik riwayat replenish terbaru |
+
+---
+
+## Transaksi Replenish
+
+Tab **Transaksi Replenish** menelusuri riwayat pemindahan stok, dari dua sumber di
+OCS yang saling melengkapi:
+
+| Tabel | Sumber OCS | Isi |
+|---|---|---|
+| `replenish_bin_log` | `DTO_HistoryReplenish` | SKU masuk ke bin mana, berapa, kapan, oleh siapa |
+| `replenish_doc` | `DTO_HistoryReplenishITHead` | Dokumen Inventory Transfer ke SAP dan statusnya |
+| `replenish_doc_line` | `GET /Stock/ReplenishHistory/{id}` | Baris detail tiap dokumen |
+
+Keduanya punya kolom SKU, sehingga satu pencarian menjawab dua pertanyaan sekaligus:
+*"masuk ke rak mana"* dan *"dokumen SAP mana, berhasil posting atau gagal"*.
+
+Tautan `#transaksi/<SKU>` membuka langsung hasil pencarian SKU tersebut, jadi bisa
+dibagikan atau di-bookmark.
+
+### Cara sinkronisasinya
+
+Log per bin dan daftar dokumen ditarik **inkremental** — hanya baris yang lebih baru
+dari yang tersimpan, memakai `Id` untuk log dan `CreatedAt` untuk dokumen, masing-masing
+dengan tenggang mundur supaya baris yang tersimpan terlambat tetap terjaring.
+
+Baris detail dokumen berbeda: OCS hanya menyediakannya satu per satu
+(`GET /Stock/ReplenishHistory/{id}`, ~1 detik per dokumen), sehingga ditarik bertahap
+lewat antrean. Kolom `detail_synced_at` yang masih kosong berarti dokumen itu belum
+diambil detailnya. Untuk menuntaskan sekaligus, jalankan:
+
+```bash
+npm run backfill-replenish
+```
+
+Aman dihentikan di tengah jalan dan dijalankan ulang — dokumen yang sudah selesai tidak
+ditarik dua kali. Setelah backfill awal, worker menyusul sisanya sendiri tiap putaran.
 
 ---
 
