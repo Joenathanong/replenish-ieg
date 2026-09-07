@@ -318,6 +318,8 @@ export async function handleApi(req, res, url) {
       limit: Number(url.searchParams.get('limit')) || 200,
       from: url.searchParams.get('from') || null,
       to: url.searchParams.get('to') || null,
+      // Bawaan: cocok persis. 'contains' hanya bila diminta eksplisit.
+      mode: url.searchParams.get('mode') === 'contains' ? 'contains' : 'exact',
     }));
   }
 

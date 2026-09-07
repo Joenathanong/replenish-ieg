@@ -17,6 +17,9 @@ const RP = {
   statusFilter: 'ALL',
   dokumen: [],
   memuat: false,
+  // Bawaan cocok persis: "CUSHION-LIGHT-1" tidak boleh ikut menampilkan
+  // "REFILL-CUSHION-LIGHT-1", karena keduanya barang yang berbeda.
+  cocokPersis: true,
 };
 
 function statusBadge(status) {
@@ -189,6 +192,12 @@ function paintPencarianSku() {
         <label class="field__label" for="rpTo">Sampai</label>
         <input class="input" id="rpTo" type="date">
       </div>
+      <label class="switch" style="margin-bottom:.35rem"
+             title="Aktif: hanya kode yang sama persis. Nonaktif: semua kode yang mengandung kata kunci.">
+        <input type="checkbox" id="rpPersis" ${RP.cocokPersis ? 'checked' : ''}>
+        <span class="switch__track"></span>
+        <span class="switch__text"><span class="switch__title">Cocok persis</span></span>
+      </label>
     </div>
     <div id="rpHasil"></div>`;
 
@@ -201,6 +210,10 @@ function paintPencarianSku() {
   box.oninput = jalankan;
   $('#rpFrom').onchange = () => cariSku(box.value);
   $('#rpTo').onchange = () => cariSku(box.value);
+  $('#rpPersis').onchange = (e) => {
+    RP.cocokPersis = e.target.checked;
+    cariSku(box.value);
+  };
 
   if (RP.query && !RP.hasil) {
     cariSku(RP.query);
@@ -234,7 +247,7 @@ async function cariSku(q) {
 
   $('#rpHasil').innerHTML = `<div class="empty"><div class="muted">Mencari…</div></div>`;
 
-  const p = new URLSearchParams({ sku: query });
+  const p = new URLSearchParams({ sku: query, mode: RP.cocokPersis ? 'exact' : 'contains' });
   const from = $('#rpFrom')?.value;
   const to = $('#rpTo')?.value;
   if (from) p.set('from', from);
@@ -254,26 +267,58 @@ function paintHasilSku() {
   if (!h) return;
 
   const kosong = !h.binLog.length && !h.docLines.length;
+  const persis = h.mode !== 'contains';
+
+  const tombolSku = (list) => list.map((s) =>
+    `<button class="badge" style="cursor:pointer;margin:2px" data-rp-pick="${esc(s.sku)}">${esc(s.sku)} · ${fmt(s.jumlah)}</button>`,
+  ).join(' ');
+
   if (kosong) {
+    // Pencocokan persis yang nihil tidak boleh membuat pengguna buntu: kalau ada
+    // kode serupa, tawarkan sebagai pilihan yang bisa langsung diklik.
+    const saran = h.skuTerkait.length ? `
+      <div style="margin-top:1rem">
+        <div class="muted" style="margin-bottom:.5rem">Mungkin yang Anda maksud:</div>
+        ${tombolSku(h.skuTerkait.slice(0, 12))}
+      </div>` : '';
+
     $('#rpHasil').innerHTML = `
       <div class="empty">
         <div class="empty__title">Tidak ada transaksi untuk "${esc(h.query)}"</div>
-        <div>Coba potongan kode yang lebih pendek, atau longgarkan rentang tanggalnya.</div>
+        <div>${persis
+          ? 'Pencocokan sedang disetel <b>persis</b>. Matikan sakelar itu untuk mencari kode yang mengandung kata kunci ini.'
+          : 'Coba potongan kode yang lain, atau longgarkan rentang tanggalnya.'}</div>
+        ${saran}
       </div>`;
+    pasangAksiHasil();
     return;
   }
 
-  // Bila kata kuncinya cocok ke beberapa SKU, tunjukkan supaya pengguna sadar
-  // hasilnya gabungan dan bisa mempersempit.
-  const daftarSku = h.skuTerkait.length > 1 ? `
-    <div class="panel__head" style="padding-bottom:0">
-      <p class="panel__hint" style="margin:0">
-        Cocok dengan <b>${h.skuTerkait.length}</b> SKU:
-        ${h.skuTerkait.slice(0, 12).map((s) =>
-          `<button class="badge" style="cursor:pointer;margin:2px" data-rp-pick="${esc(s.sku)}">${esc(s.sku)} · ${fmt(s.jumlah)}</button>`,
-        ).join(' ')}
-      </p>
-    </div>` : '';
+  /*
+   * Dua pesan yang berbeda maknanya:
+   *   persis   -> hasil murni satu SKU; kode serupa ditawarkan sebagai alternatif.
+   *   sebagian -> hasil menggabungkan beberapa SKU; itu harus dinyatakan terang
+   *               supaya angkanya tidak dikira milik satu barang saja.
+   */
+  const lain = h.skuTerkait.filter((s) => s.sku.toLowerCase() !== h.query.toLowerCase());
+
+  const daftarSku = persis
+    ? (lain.length ? `
+      <div class="panel__head" style="padding-bottom:0">
+        <p class="panel__hint" style="margin:0">
+          Menampilkan <b>${esc(h.query)}</b> saja. Kode serupa:
+          ${tombolSku(lain.slice(0, 12))}
+        </p>
+      </div>` : '')
+    : (h.skuTerkait.length > 1 ? `
+      <div class="strip strip--warning" style="margin:1rem">
+        ${icon('alert')}
+        <span>
+          Hasil ini <b>menggabungkan ${h.skuTerkait.length} SKU</b> yang mengandung
+          "${esc(h.query)}", jadi angkanya bukan milik satu barang saja:
+          ${tombolSku(h.skuTerkait.slice(0, 12))}
+        </span>
+      </div>` : '');
 
   $('#rpHasil').innerHTML = `
     ${daftarSku}

@@ -45,14 +45,24 @@ export async function getReplenishSummary() {
 /**
  * Pencarian per SKU.
  *
- * Pencocokan memakai LIKE agar pengguna tidak perlu mengetik kode SKU secara
- * lengkap dan persis — di gudang, kode biasanya diingat sepotong.
+ * Bawaannya mencocokkan kode secara **persis**. Pencocokan sebagian pernah
+ * menjadi bawaan agar pengguna tidak perlu mengetik kode lengkap, tetapi itu
+ * mencampur produk yang berbeda: mencari "CUSHION-LIGHT-1" ikut menampilkan
+ * "REFILL-CUSHION-LIGHT-1", dan angkanya tergabung tanpa disadari.
+ *
+ * Perbandingannya tetap mengabaikan besar-kecil huruf, karena itu soal cara
+ * mengetik, bukan soal identitas barang. Pencocokan sebagian masih tersedia
+ * lewat `mode: 'contains'`, dan daftar SKU serupa selalu disertakan sebagai
+ * saran sehingga pengguna yang hanya ingat sepotong kode tidak buntu.
  */
-export async function searchBySku(query, { limit = 200, from = null, to = null } = {}) {
+export async function searchBySku(query, { limit = 200, from = null, to = null, mode = 'exact' } = {}) {
   const q = String(query || '').trim();
-  if (!q) return { query: q, binLog: [], docLines: [], skuTerkait: [] };
+  if (!q) return { query: q, mode, binLog: [], docLines: [], skuTerkait: [] };
 
+  const persis = mode !== 'contains';
   const like = `%${q.toLowerCase()}%`;
+  const cocok = persis ? q.toLowerCase() : like;
+  const operator = persis ? '=' : 'LIKE';
   const lim = safeLimit(limit, 200);
 
   const range = (col) => {
@@ -70,10 +80,10 @@ export async function searchBySku(query, { limit = 200, from = null, to = null }
     all(
       `SELECT id, seller_sku, bin_code, move_type, qty, created_at, created_by
          FROM replenish_bin_log
-        WHERE LOWER(seller_sku) LIKE ? ${rBin.sql}
+        WHERE LOWER(seller_sku) ${operator} ? ${rBin.sql}
         ORDER BY created_at DESC
         LIMIT ${lim}`,
-      [like, ...rBin.params],
+      [cocok, ...rBin.params],
     ),
     all(
       `SELECT l.id, l.head_id, l.row_id, l.seller_sku, l.kode_barang, l.jumlah, l.satuan,
@@ -81,13 +91,14 @@ export async function searchBySku(query, { limit = 200, from = null, to = null }
               d.remark, d.error_message, d.created_by, d.created_at, d.posted_at
          FROM replenish_doc_line l
          JOIN replenish_doc d ON d.id = l.head_id
-        WHERE LOWER(l.seller_sku) LIKE ? ${rDoc.sql}
+        WHERE LOWER(l.seller_sku) ${operator} ? ${rDoc.sql}
         ORDER BY d.created_at DESC
         LIMIT ${lim}`,
-      [like, ...rDoc.params],
+      [cocok, ...rDoc.params],
     ),
-    // SKU berbeda yang cocok dengan kata kunci; membantu saat pengguna hanya
-    // ingat sebagian kode.
+    // Saran SKU selalu memakai pencocokan sebagian, bahkan saat mode persis:
+    // inilah yang menolong pengguna yang salah ketik atau hanya ingat sepotong
+    // kode, tanpa mencampurkannya ke dalam hasil utama.
     all(
       `SELECT seller_sku, COUNT(*) AS n FROM (
          SELECT seller_sku FROM replenish_bin_log WHERE LOWER(seller_sku) LIKE ?
@@ -103,6 +114,7 @@ export async function searchBySku(query, { limit = 200, from = null, to = null }
 
   return {
     query: q,
+    mode: persis ? 'exact' : 'contains',
     binLog,
     docLines,
     skuTerkait: skuTerkait.map((r) => ({ sku: r.seller_sku, jumlah: Number(r.n) })),

@@ -203,6 +203,21 @@ Keduanya punya kolom SKU, sehingga satu pencarian menjawab dua pertanyaan sekali
 Tautan `#transaksi/<SKU>` membuka langsung hasil pencarian SKU tersebut, jadi bisa
 dibagikan atau di-bookmark.
 
+### Pencocokan kode
+
+Pencarian **mencocokkan kode secara persis**. Mencari `CUSHION-LIGHT-1` tidak akan ikut
+menampilkan `REFILL-CUSHION-LIGHT-1` — keduanya barang yang berbeda, dan menggabungkan
+angkanya justru menyesatkan.
+
+Besar-kecil huruf tetap diabaikan, karena itu soal cara mengetik dan bukan soal identitas
+barang. Sakelar **Cocok persis** bisa dimatikan bila memang ingin mencari semua kode yang
+mengandung kata kunci; saat dimatikan, aplikasi memberi peringatan bahwa hasilnya
+menggabungkan beberapa SKU.
+
+Kode serupa selalu ditawarkan sebagai tombol yang bisa diklik — termasuk ketika
+pencocokan persis tidak menemukan apa pun, sehingga pengguna yang hanya ingat sepotong
+kode tidak buntu.
+
 ### Cara sinkronisasinya
 
 Log per bin dan daftar dokumen ditarik **inkremental** — hanya baris yang lebih baru
