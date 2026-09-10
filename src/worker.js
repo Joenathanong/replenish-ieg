@@ -83,8 +83,11 @@ async function tick() {
         // sedangkan hari terbaru masih berubah karena order berpindah status.
         const sl = await syncSalesRecent();
         log(
-          `penjualan — ${sl.hari} hari (${sl.from} s/d ${sl.to}), ` +
-          `${sl.orderRows} baris order, ${sl.skuRows} baris SKU (${sl.durationMs} ms)`,
+          sl.hari === 0
+            ? `penjualan — tidak ada yang perlu ditarik, ${sl.dilewati} hari sudah mengendap`
+            : `penjualan — ${sl.hari} hari ditarik` +
+              (sl.dilewati ? `, ${sl.dilewati} hari dilewati karena angkanya tidak berubah` : '') +
+              `, ${sl.orderRows} baris order, ${sl.skuRows} baris SKU (${sl.durationMs} ms)`,
         );
       } catch (err) {
         log('penjualan GAGAL —', err.message);

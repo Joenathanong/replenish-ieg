@@ -223,7 +223,7 @@ export async function getSalesSku({
 /** Daftar hari yang sudah tersimpan, untuk halaman penarikan data. */
 export async function getSalesDays(limit = 400) {
   const rows = await all(
-    `SELECT sales_date, order_rows, sku_rows, pulled_at
+    `SELECT sales_date, order_rows, sku_rows, pulled_at, stable_count
        FROM sales_sync_day ORDER BY sales_date DESC LIMIT ${safeLimit(limit, 400, 2000)}`,
   );
   return rows.map((r) => ({
@@ -231,5 +231,6 @@ export async function getSalesDays(limit = 400) {
     orderRows: Number(r.order_rows),
     skuRows: Number(r.sku_rows),
     pulledAt: r.pulled_at,
+    stableCount: Number(r.stable_count) || 0,
   }));
 }

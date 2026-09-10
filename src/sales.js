@@ -169,16 +169,39 @@ async function tarikPotongan({ from, to, hari }, opsi) {
     if (statusValues.length) await insertBatched(conn, STATUS_SQL, statusValues);
     if (skuValues.length) await insertBatched(conn, SKU_SQL, skuValues);
 
+    /*
+     * Sidik jari isi satu hari: jumlah order, jumlah barang, dan banyaknya baris.
+     * Kalau sidik jari sama dengan penarikan sebelumnya, berarti isinya tidak
+     * berubah — `stable_count` naik, dan begitu cukup tinggi hari itu berhenti
+     * ikut disegarkan berkala.
+     */
+    const sidik = new Map();
+    for (const tgl of hariDitulis) {
+      const st = statusValues.filter((v) => v[0] === tgl);
+      const sk = skuValues.filter((v) => v[0] === tgl);
+      const order = st.reduce((a, v) => a + v[5], 0);
+      const qty = sk.reduce((a, v) => a + v[4], 0);
+      sidik.set(tgl, `${order}:${qty}:${st.length}:${sk.length}`);
+    }
+
     const cakupan = hariDitulis.map((tgl) => [
       tgl,
       statusValues.filter((v) => v[0] === tgl).length,
       skuValues.filter((v) => v[0] === tgl).length,
       now,
+      sidik.get(tgl),
     ]);
+
     await conn.query(
-      `INSERT INTO sales_sync_day (sales_date, order_rows, sku_rows, pulled_at) VALUES ?
-       ON DUPLICATE KEY UPDATE order_rows = VALUES(order_rows), sku_rows = VALUES(sku_rows), pulled_at = VALUES(pulled_at)`,
-      [cakupan],
+      `INSERT INTO sales_sync_day (sales_date, order_rows, sku_rows, pulled_at, fingerprint, stable_count)
+       VALUES ${cakupan.map(() => '(?,?,?,?,?,0)').join(',')}
+       ON DUPLICATE KEY UPDATE
+         order_rows   = VALUES(order_rows),
+         sku_rows     = VALUES(sku_rows),
+         pulled_at    = VALUES(pulled_at),
+         stable_count = IF(fingerprint = VALUES(fingerprint), stable_count + 1, 0),
+         fingerprint  = VALUES(fingerprint)`,
+      cakupan.flat(),
     );
   });
 
@@ -232,13 +255,108 @@ export async function syncSalesRange(fromDate, toDate, { onProgress = null, ...o
  * status hari ini. Banyaknya hari diatur lewat `sales_resync_days` di halaman
  * Pengaturan.
  */
-export async function syncSalesRecent({ days = null } = {}) {
+/**
+ * Berapa kali berturut-turut sidik jari harus sama sebelum satu hari dianggap
+ * mengendap dan berhenti ditarik ulang.
+ */
+const AMBANG_MENGENDAP = 2;
+
+/** Dua hari terakhir selalu ditarik ulang, sematang apa pun angkanya terlihat. */
+const HARI_SELALU_SEGAR = 2;
+
+/**
+ * Penarikan berkala: menyegarkan beberapa hari terakhir.
+ *
+ * Bukan hanya hari ini, karena order yang dibuat kemarin masih bisa berpindah
+ * status hari ini. Tetapi hari yang isinya sudah sama beberapa kali berturut-turut
+ * tidak perlu ditarik lagi — itu penarikan yang tidak mengubah apa pun, sementara
+ * rentang lama mahal di sisi OCS.
+ */
+export async function syncSalesRecent({ days = null, paksa = false } = {}) {
   const settings = await getSettings();
   const n = Math.max(1, Math.trunc(Number(days ?? settings.sales_resync_days) || 7));
 
   const to = hariISO(new Date());
   const from = hariISO(new Date(Date.now() - (n - 1) * 86400_000));
-  return syncSalesRange(from, to);
+
+  if (paksa) return syncSalesRange(from, to);
+
+  const semua = daftarTanggal(from, to);
+  const batasSegar = hariISO(new Date(Date.now() - (HARI_SELALU_SEGAR - 1) * 86400_000));
+
+  const mengendap = new Set(
+    (await all(
+      `SELECT sales_date FROM sales_sync_day
+        WHERE sales_date BETWEEN ? AND ? AND stable_count >= ?`,
+      [from, to, AMBANG_MENGENDAP],
+    )).map((r) => tanggalSaja(r.sales_date)),
+  );
+
+  const perlu = semua.filter((t) => t >= batasSegar || !mengendap.has(t));
+  const dilewati = semua.length - perlu.length;
+
+  if (!perlu.length) {
+    return { from, to, hari: 0, orderRows: 0, skuRows: 0, gagal: [], dilewati, durationMs: 0 };
+  }
+
+  const hasil = await tarikDaftarHari(perlu);
+  return { ...hasil, from, to, dilewati };
+}
+
+/**
+ * Tarik sekumpulan tanggal yang tidak harus berurutan.
+ * Tanggal yang bersebelahan digabung menjadi satu rentang agar jumlah permintaan
+ * ke OCS sesedikit mungkin.
+ */
+export async function tarikDaftarHari(tanggal, { onProgress = null, ...opsi } = {}) {
+  const urut = [...new Set(tanggal)].sort();
+  const blok = [];
+
+  for (const t of urut) {
+    const terakhir = blok[blok.length - 1];
+    const sebelumnya = terakhir && terakhir[terakhir.length - 1];
+    const bersebelahan = sebelumnya &&
+      Date.parse(`${t}T00:00:00Z`) - Date.parse(`${sebelumnya}T00:00:00Z`) === 86400_000;
+    if (bersebelahan) terakhir.push(t);
+    else blok.push([t]);
+  }
+
+  const t0 = Date.now();
+  let hari = 0;
+  let orderRows = 0;
+  let skuRows = 0;
+  const gagal = [];
+
+  for (let i = 0; i < blok.length; i++) {
+    const b = blok[i];
+    try {
+      const r = await syncSalesRange(b[0], b[b.length - 1], opsi);
+      hari += r.hari;
+      orderRows += r.orderRows;
+      skuRows += r.skuRows;
+      gagal.push(...r.gagal);
+    } catch (err) {
+      gagal.push({ from: b[0], to: b[b.length - 1], error: err.message });
+    }
+    if (onProgress) onProgress(i + 1, blok.length, b);
+  }
+
+  return { hari, orderRows, skuRows, gagal, blok: blok.length, durationMs: Date.now() - t0 };
+}
+
+/** Tarik hanya tanggal dalam rentang yang belum pernah tersimpan. */
+export async function syncSalesMissing(fromDate, toDate, opsi = {}) {
+  const ada = new Set(
+    (await all('SELECT sales_date FROM sales_sync_day WHERE sales_date BETWEEN ? AND ?', [fromDate, toDate]))
+      .map((r) => tanggalSaja(r.sales_date)),
+  );
+  const kurang = daftarTanggal(fromDate, toDate).filter((t) => !ada.has(t));
+
+  if (!kurang.length) {
+    return { from: fromDate, to: toDate, hari: 0, orderRows: 0, skuRows: 0, gagal: [], sudahLengkap: true };
+  }
+  const hasil = await tarikDaftarHari(kurang, opsi);
+  return { ...hasil, from: fromDate, to: toDate, diminta: kurang.length, sudahLengkap: false };
 }
 
 /** Ringkasan cakupan: rentang tanggal yang sudah tersimpan dan berapa harinya. */

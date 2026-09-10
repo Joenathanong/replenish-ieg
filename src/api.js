@@ -39,7 +39,7 @@ import {
   getSalesSku,
   getSalesDays,
 } from './sales-query.js';
-import { syncSalesRange, syncSalesRecent, getSalesCoverage } from './sales.js';
+import { syncSalesRange, syncSalesRecent, syncSalesMissing, getSalesCoverage } from './sales.js';
 
 /** Batas nilai yang boleh disimpan, supaya UI tidak bisa mengirim angka merusak. */
 const SETTING_RULES = {
@@ -491,6 +491,17 @@ export async function handleApi(req, res, url) {
     }
 
     const hasil = await syncSalesRange(from, to);
+    return sendJson(res, 200, { ...hasil, coverage: await getSalesCoverage() });
+  }
+
+  if (pathname === '/api/sales/fill' && method === 'POST') {
+    const body = await readBody(req);
+    const from = String(body.from || '').slice(0, 10);
+    const to = String(body.to || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      return sendJson(res, 400, { error: 'Tanggal harus berformat YYYY-MM-DD' });
+    }
+    const hasil = await syncSalesMissing(from, to);
     return sendJson(res, 200, { ...hasil, coverage: await getSalesCoverage() });
   }
 

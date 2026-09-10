@@ -36,6 +36,7 @@ dengan worker di PC gudang dan dashboard di Vercel.
 | `npm run sync-once` | Tarik satu snapshot lalu keluar |
 | `npm run import-sqlite` | Pindahkan data dari database SQLite versi lama |
 | `npm run backfill-replenish` | Tarik seluruh riwayat transaksi replenish dari OCS |
+| `npm run backfill-sales <YYYY-MM> <YYYY-MM>` | Tarik penjualan bulan demi bulan, mundur, melewati yang sudah ada |
 
 ### Konfigurasi
 
@@ -193,7 +194,8 @@ Semua endpoint mengembalikan JSON kecuali `export.csv`.
 | `GET` | `/api/sales/sku` | Barang terjual per SKU (`sku`, `mode`, `groupBy`) |
 | `GET` | `/api/sales/days` | Hari yang sudah tersimpan |
 | `POST` | `/api/sales/pull` | Tarik rentang tanggal tertentu (`from`, `to`) |
-| `POST` | `/api/sales/refresh` | Segarkan beberapa hari terakhir |
+| `POST` | `/api/sales/fill` | Tarik hanya tanggal yang belum tersimpan pada rentang |
+| `POST` | `/api/sales/refresh` | Segarkan beberapa hari terakhir yang masih berubah |
 
 ---
 
@@ -320,6 +322,34 @@ batas rentang di sisi server pernah menyertakan hari di luar permintaan.
 Rentang penarikan ditentukan sendiri dari bagian **Tarik Data**. Worker menyegarkan
 beberapa hari terakhir tiap putaran, sebanyak `sales_resync_days` di halaman Pengaturan
 (bawaan 7 hari).
+
+### Berhenti menarik hari yang angkanya sudah tetap
+
+Setiap hari yang tersimpan punya **sidik jari** — gabungan jumlah order, jumlah barang,
+dan banyaknya baris. Bila penarikan berikutnya menghasilkan sidik jari yang sama,
+`stable_count` naik; begitu isinya sama **dua kali berturut-turut**, hari itu dianggap
+mengendap dan berhenti ikut disegarkan berkala.
+
+Dua hari terakhir selalu ditarik ulang apa pun keadaannya, karena di sanalah order masih
+aktif berpindah status.
+
+Hasilnya penyegaran rutin hanya menyentuh hari yang benar-benar masih berubah. Kolom
+**Angka** di daftar hari menunjukkan mana yang sudah *Mengendap* dan mana yang *Masih
+berubah*.
+
+### Memperluas cakupan ke belakang
+
+```bash
+npm run backfill-sales 2026-01 2026-06
+```
+
+Menarik bulan demi bulan dari yang terbaru ke yang terlama — kalau terhenti di tengah
+jalan, yang sudah masuk adalah bagian yang paling sering dipakai. **Tanggal yang sudah
+tersimpan dilewati**, jadi menjalankan ulang hanya mengerjakan sisanya.
+
+Di web, tombol **Lengkapi yang Kosong** melakukan hal yang sama untuk rentang yang
+sedang dipilih: hanya menarik tanggal yang belum ada, jauh lebih murah daripada menarik
+ulang semuanya.
 
 ### Berapa lama penarikannya
 

@@ -495,7 +495,10 @@ function paintTarik() {
           </div>
         </div>
         <div class="toolbar__spacer"></div>
-        <button class="btn btn--emphasized" id="slTarikBtn">${icon('download')} Tarik dari OCS</button>
+        <button class="btn" id="slLengkapiBtn" title="Hanya menarik tanggal yang belum tersimpan di rentang ini">
+          ${icon('refresh')} Lengkapi yang Kosong
+        </button>
+        <button class="btn btn--emphasized" id="slTarikBtn">${icon('download')} Tarik Ulang Semua</button>
       </div>
 
       <div id="slTarikPesan"></div>
@@ -563,6 +566,40 @@ function paintTarik() {
     }
   };
 
+  /*
+   * "Lengkapi yang Kosong" hanya menyentuh tanggal yang belum tersimpan.
+   * Jauh lebih murah daripada menarik ulang seluruh rentang, dan inilah cara
+   * yang dipakai saat memperluas cakupan ke belakang.
+   */
+  $('#slLengkapiBtn').onclick = async (e) => {
+    const btn = e.currentTarget;
+    const from = $('#slTarikFrom').value;
+    const to = $('#slTarikTo').value;
+    if (!from || !to) return toast('Isi kedua tanggalnya dulu.', 'error');
+
+    const pesan = $('#slTarikPesan');
+    btn.disabled = true;
+    const asli = btn.innerHTML;
+    btn.innerHTML = `<span class="spinner"></span><span>Memeriksa…</span>`;
+    try {
+      const r = await api('/api/sales/fill', { method: 'POST', body: JSON.stringify({ from, to }) });
+      pesan.innerHTML = r.sudahLengkap
+        ? `<div class="strip strip--success">${icon('check')}<span>Rentang ini sudah lengkap — tidak ada yang perlu ditarik.</span></div>`
+        : `<div class="strip strip--success">${icon('check')}<span>
+             Melengkapi <b>${fmt(r.hari)}</b> dari ${fmt(r.diminta)} hari yang kosong,
+             dalam ${formatDurasi(Math.round(r.durationMs / 1000))}.
+             ${r.gagal.length ? `<br><b>${r.gagal.length} potongan gagal</b> — jalankan lagi untuk mengejar sisanya.` : ''}
+           </span></div>`;
+      SL.ringkasan = await api(`/api/sales/summary?from=${SL.nilai.from}&to=${SL.nilai.to}`);
+      await muatDaftarHari();
+    } catch (err) {
+      pesan.innerHTML = `<div class="strip strip--error">${icon('error')}<span>${esc(err.message)}</span></div>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = asli;
+    }
+  };
+
   muatDaftarHari();
 }
 
@@ -582,7 +619,7 @@ async function muatDaftarHari() {
   host.innerHTML = `
     <div class="table-wrap" style="max-height:22rem;overflow-y:auto">
       <table class="ftable">
-        <thead><tr><th>Tanggal</th><th class="num">Baris Order</th><th class="num">Baris SKU</th><th>Ditarik</th></tr></thead>
+        <thead><tr><th>Tanggal</th><th class="num">Baris Order</th><th class="num">Baris SKU</th><th>Ditarik</th><th>Angka</th></tr></thead>
         <tbody>
           ${SL.hari.map((d) => `
             <tr>
@@ -590,6 +627,9 @@ async function muatDaftarHari() {
               <td class="num">${fmt(d.orderRows)}</td>
               <td class="num">${fmt(d.skuRows)}</td>
               <td class="muted nowrap">${fmtWaktu(d.pulledAt)}</td>
+              <td>${d.stableCount >= 2
+                ? '<span class="badge badge--ready" title="Isinya sudah sama beberapa kali berturut-turut, jadi tidak ditarik ulang lagi">Mengendap</span>'
+                : '<span class="badge badge--new" title="Masih mungkin berubah, jadi tetap disegarkan berkala">Masih berubah</span>'}</td>
             </tr>`).join('')}
         </tbody>
       </table>

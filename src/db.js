@@ -390,6 +390,14 @@ async function ensureColumn(table, column, definition) {
 export async function ensureSchema() {
   for (const stmt of SCHEMA_STATEMENTS) await run(stmt);
   await ensureColumn('sync_log', 'trigger_source', 'VARCHAR(20) NULL');
+
+  /*
+   * Sidik jari isi satu hari, dan berapa kali berturut-turut ia tidak berubah.
+   * Dipakai untuk berhenti menarik ulang hari yang angkanya sudah mengendap.
+   */
+  await ensureColumn('sales_sync_day', 'fingerprint', 'VARCHAR(80) NULL');
+  await ensureColumn('sales_sync_day', 'stable_count', 'INT NOT NULL DEFAULT 0');
+
   await seedSettings();
 }
 
