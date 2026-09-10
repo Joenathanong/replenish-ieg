@@ -458,10 +458,16 @@ function paintTarik() {
 
   $('#slBody').innerHTML = `
     <div class="panel__body">
-      <p class="panel__hint" style="margin:0 0 1rem">
+      <p class="panel__hint" style="margin:0 0 .5rem">
         Pilih sendiri rentang tanggal yang ingin diambil dari OCS. Menarik rentang yang
         sama berulang kali aman — hari yang sudah ada <b>ditulis ulang</b>, bukan ditambahkan,
         sehingga angkanya tidak pernah berlipat.
+      </p>
+      <p class="panel__hint" style="margin:0 0 1rem">
+        Rentang sepanjang apa pun boleh diisi. Permintaan ke OCS <b>dipecah otomatis</b>
+        menjadi potongan kecil — 7 hari untuk data baru, 3 hari untuk data lama — sehingga
+        batas 31 hari di OCS tidak pernah tersentuh. Potongan yang gagal dilaporkan dan
+        bisa ditarik ulang sendiri tanpa mengganggu hari yang sudah masuk.
       </p>
 
       <div class="toolbar" style="background:transparent;box-shadow:none;padding-left:0">

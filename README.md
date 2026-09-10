@@ -338,7 +338,11 @@ Tarik Data menghitung perkiraan ini per rentang dan menampilkannya sebelum penar
 dimulai, dengan tarif berbeda untuk data baru dan lama.
 
 Karena itu potongan permintaan menyesuaikan umurnya — 7 hari sekali jalan untuk data
-baru, 3 hari untuk data lama — dan batas waktunya dinaikkan menjadi 240 detik. Potongan
+baru, 3 hari untuk data lama — dan batas waktunya dinaikkan menjadi 240 detik.
+
+Pemecahan ini juga membuat batas **31 hari per permintaan** di halaman Report OCS tidak
+pernah tersentuh: rentang satu tahun pun terpecah menjadi 117 potongan yang masing-masing
+paling banyak 7 hari. Jadi rentang sepanjang apa pun boleh diisi di halaman Tarik Data. Potongan
 yang tetap gagal **tidak menjatuhkan sisa rentang**: hari yang sudah masuk tetap
 tersimpan, potongan yang gagal dilaporkan, dan hari yang belum lengkap muncul sebagai
 "hari bolong" di halaman Penjualan.
