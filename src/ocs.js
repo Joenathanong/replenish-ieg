@@ -299,24 +299,27 @@ export async function fetchAdjustmentDetails(ids) {
  * di luar rentang yang diminta — hari itu lalu tidak ikut terhapus saat
  * penulisan ulang dan menabrak kunci primer pada penarikan berikutnya.
  */
+/**
+ * Zona waktu data OCS. Cap waktunya berakhiran +07:00, dan pengelompokan
+ * hariannya mengikuti hari kalender di zona itu — bukan UTC.
+ */
+const ZONA_OCS = process.env.OCS_TIMEZONE_OFFSET || '+07:00';
+
+/**
+ * Batas rentang tanggal untuk endpoint report.
+ *
+ * Batasnya HARUS dipatok ke awal dan akhir hari menurut zona waktu OCS.
+ * Sebelumnya dipakai tengah malam UTC, yang jatuh pada pukul 07:00 waktu OCS —
+ * akibatnya hari pertama dan terakhir setiap permintaan terpotong, dan hanya
+ * hari di tengah rentang yang utuh.
+ *
+ * Terukur pada 15 Maret 2026: di tengah rentang 67.601 pcs, di awal rentang
+ * 50.888, di akhir rentang 16.713 — dan dua angka terakhir berjumlah tepat
+ * sama dengan yang pertama, memperlihatkan harinya terbelah di tengah malam UTC.
+ */
 function rentang(fromDate, toDate) {
-  const awal = new Date(`${fromDate}T00:00:00.000Z`).getTime();
-  let akhir = new Date(`${toDate}T00:00:00.000Z`).getTime();
-
-  /*
-   * Rentang nol-panjang dijawab kosong oleh OCS, bukan berisi satu hari itu.
-   * Permintaan satu hari karena itu dilebarkan menjadi dua hari; hari tambahan
-   * yang ikut terbawa tetap tertangani, karena penghapusan sebelum penulisan
-   * memakai gabungan hari yang diminta dan hari yang benar-benar dikembalikan.
-   *
-   * Tanpa pelebaran ini, potongan terakhir yang kebetulan berisi satu hari
-   * tersimpan sebagai hari kosong — tercatat "sudah ditarik" padahal datanya
-   * tidak pernah datang.
-   */
-  if (akhir <= awal) akhir = awal + 86400_000;
-
-  const from = new Date(awal).toISOString();
-  const to = new Date(akhir).toISOString();
+  const from = `${fromDate}T00:00:00.000${ZONA_OCS}`;
+  const to = `${toDate}T23:59:59.999${ZONA_OCS}`;
   return `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
 }
 

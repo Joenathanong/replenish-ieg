@@ -319,10 +319,27 @@ Penghapusan mencakup gabungan hari yang diminta dan hari yang benar-benar dikemb
 server — keduanya perlu, karena hari yang transaksinya hilang harus ikut bersih, dan
 batas rentang di sisi server pernah menyertakan hari di luar permintaan.
 
-Permintaan satu hari (`from` sama dengan `to`) dilebarkan menjadi dua hari, karena OCS
-menjawab rentang nol-panjang dengan kosong. Tanpa pelebaran itu, potongan terakhir yang
-kebetulan berisi satu hari tersimpan sebagai hari kosong — tercatat "sudah ditarik"
-padahal datanya tidak pernah datang.
+### Batas hari mengikuti zona waktu OCS
+
+Cap waktu OCS berakhiran **+07:00** dan pengelompokan hariannya mengikuti hari kalender
+di zona itu. Batas rentang karena itu dikirim sebagai `T00:00:00+07:00` sampai
+`T23:59:59.999+07:00`, bukan tengah malam UTC.
+
+Ini bukan detail kecil. Tengah malam UTC jatuh pada pukul 07:00 waktu OCS, sehingga hari
+pertama dan terakhir setiap permintaan terpotong dan hanya hari di tengah rentang yang
+utuh. Terukur pada 15 Maret 2026:
+
+| Posisi 15 Maret dalam jendela | Qty |
+|---|---|
+| Di tengah | 67.601 |
+| Di awal | 50.888 |
+| Di akhir | 16.713 |
+
+Dua angka terakhir berjumlah tepat sama dengan yang pertama — harinya memang terbelah di
+tengah malam UTC. Dengan potongan tiga-harian, dua dari tiga hari akan salah.
+
+Setelah batasnya dipatok ke zona OCS, keempat posisi (tengah, awal, akhir, sendirian)
+memberi angka yang sama.
 
 Halaman Penjualan menandai dua keadaan berbeda: **hari bolong** (belum pernah ditarik)
 dan **hari kosong** (tercatat ditarik tetapi tanpa satu baris pun). Yang kedua lebih
