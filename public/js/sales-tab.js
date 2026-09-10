@@ -40,12 +40,16 @@ function hariLalu(n) { return new Date(Date.now() - n * 86400000).toISOString().
  *
  * OCS menyegarkan materialized view untuk data terkini sehingga 30 hari
  * terakhir dijawab ~2,5 detik per hari. Data yang lebih lama tampaknya dipindai
- * dari tabel order 19,6 juta baris dan memakan ~31 detik per hari — dua belas
- * kali lebih lambat. Satu angka rata-rata akan menyesatkan, jadi keduanya
- * dihitung terpisah.
+ * dari tabel order 19,6 juta baris dan jauh lebih lambat. Satu angka rata-rata
+ * akan menyesatkan, jadi keduanya dihitung terpisah.
+ *
+ * Angka data lama pernah diukur 31 detik per hari saat potongannya masih 7 hari;
+ * setelah potongan untuk data lama dikecilkan menjadi 3 hari, pengukuran ulang
+ * atas 39 hari memberi 14,5 detik per hari. Nilai di bawah memakai hasil
+ * pengukuran terakhir itu.
  */
 const DETIK_PER_HARI_BARU = 2.5;
-const DETIK_PER_HARI_LAMA = 31;
+const DETIK_PER_HARI_LAMA = 14.5;
 const BATAS_HARI_LAMA = 30;
 
 function perkiraanDetik(from, to) {

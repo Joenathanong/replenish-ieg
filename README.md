@@ -330,10 +330,15 @@ dari tabel order 19,6 juta baris.
 
 | Rentang | Terukur | Per hari |
 |---|---|---|
-| 7 hari terakhir | 17,6 detik | 2,5 detik |
-| Hari-hari Juli | 21 hari / ±11 menit | 31 detik |
+| 7 hari terakhir (potongan 7 hari) | 17,6 detik | 2,5 detik |
+| Hari-hari Juli (potongan 7 hari) | 21 hari / ±11 menit | 31 detik |
+| 39 hari Juli–Agustus (potongan 3 hari) | 9,4 menit | **14,5 detik** |
 
-Perkiraan praktis: 30 hari ±1 menit, 90 hari ±30 menit, satu tahun ±3 jam. Halaman
+Mengecilkan potongan untuk data lama membuatnya lebih dari dua kali lebih cepat —
+permintaan yang lebih pendek lebih jarang menabrak batas waktu dan lebih jarang perlu
+diulang.
+
+Perkiraan praktis: 30 hari ±1 menit, 90 hari ±16 menit, satu tahun ±1,4 jam. Halaman
 Tarik Data menghitung perkiraan ini per rentang dan menampilkannya sebelum penarikan
 dimulai, dengan tarif berbeda untuk data baru dan lama.
 
