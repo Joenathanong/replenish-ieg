@@ -289,6 +289,59 @@ export async function fetchAdjustmentDetails(ids) {
   return Array.isArray(res.data) ? res.data : [];
 }
 
+// -------------------- laporan penjualan --------------------
+
+/**
+ * Endpoint report menerima rentang tanggal dan mengembalikan agregat harian.
+ *
+ * KEDUA batas bersifat inklusif. Sempat diperlakukan sebagai eksklusif dengan
+ * memajukan `to` satu hari, dan akibatnya server mengembalikan satu hari ekstra
+ * di luar rentang yang diminta — hari itu lalu tidak ikut terhapus saat
+ * penulisan ulang dan menabrak kunci primer pada penarikan berikutnya.
+ */
+function rentang(fromDate, toDate) {
+  const from = new Date(`${fromDate}T00:00:00.000Z`).toISOString();
+  const to = new Date(`${toDate}T00:00:00.000Z`).toISOString();
+  return `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+}
+
+/**
+ * Order per shop: satu baris per tanggal x shop x area, berisi total order,
+ * SOI/MOI, dan rincian per platform beserta jumlah order tiap kelompok status.
+ */
+export async function fetchSalesOrderReport(fromDate, toDate, { area = 'All', shop = 'All', platform = 'All' } = {}) {
+  const data = await authedGet(
+    `/Report/OrderPerShopReport?${rentang(fromDate, toDate)}&platform=${encodeURIComponent(platform)}` +
+    `&shop=${encodeURIComponent(shop)}&area=${encodeURIComponent(area)}`,
+    RETRY_BUDGET.timeoutMs,
+    RETRY_BUDGET.attempts,
+  );
+  return Array.isArray(data) ? data : [];
+}
+
+/** Order per SKU: satu baris per tanggal x SKU x area, dengan rincian platform. */
+export async function fetchSalesSkuReport(fromDate, toDate, { area = 'All', shop = 'All', platform = 'All' } = {}) {
+  const data = await authedGet(
+    `/Report/OrderPerSkuReport?${rentang(fromDate, toDate)}&platform=${encodeURIComponent(platform)}` +
+    `&shop=${encodeURIComponent(shop)}&area=${encodeURIComponent(area)}`,
+    RETRY_BUDGET.timeoutMs,
+    RETRY_BUDGET.attempts,
+  );
+  return Array.isArray(data) ? data : [];
+}
+
+/** Daftar status resmi beserta kodenya. Dipakai halaman audit status. */
+export async function fetchStatusList() {
+  const data = await authedGet('/MasterData/GetStatusList', 30_000, 2);
+  return Array.isArray(data) ? data : [];
+}
+
+/** Nilai filter yang disediakan OCS: area, shop, dan channel. */
+export async function fetchReportFilterOptions() {
+  const data = await authedGet('/Report/ReportFilterOptions', 30_000, 2);
+  return data && typeof data === 'object' ? data : { Areas: [], Shops: [], Channels: [] };
+}
+
 export async function testConnection() {
   const started = Date.now();
   const token = await getToken(true);

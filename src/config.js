@@ -118,4 +118,7 @@ export const DEFAULT_SETTINGS = {
   slide_interval_seconds: 15, // durasi tiap slide
   new_item_days: 7,           // item dianggap "baru" jika pertama terlihat dalam N hari
   auto_sync_enabled: 1,       // aktif/nonaktifkan penarikan otomatis
+  // Berapa hari terakhir yang disegarkan tiap putaran. Bukan hanya hari ini,
+  // karena order yang dibuat kemarin masih bisa berpindah status hari ini.
+  sales_resync_days: 7,
 };

@@ -33,6 +33,13 @@ import {
   getAdjustment,
 } from './adjustment-query.js';
 import { syncAdjustment, countPendingAdjustmentDetails } from './adjustment.js';
+import {
+  getSalesSummary,
+  getSalesOrders,
+  getSalesSku,
+  getSalesDays,
+} from './sales-query.js';
+import { syncSalesRange, syncSalesRecent, getSalesCoverage } from './sales.js';
 
 /** Batas nilai yang boleh disimpan, supaya UI tidak bisa mengirim angka merusak. */
 const SETTING_RULES = {
@@ -47,6 +54,7 @@ const SETTING_RULES = {
   slide_rows: { min: 3, max: 60 },
   slide_interval_seconds: { min: 3, max: 300 },
   new_item_days: { min: 1, max: 365 },
+  sales_resync_days: { min: 1, max: 90 },
   auto_sync_enabled: { min: 0, max: 1 },
 };
 
@@ -422,6 +430,73 @@ export async function handleApi(req, res, url) {
     const detailLimit = config.isServerless ? 500 : 2000;
     const result = await syncAdjustment({ detailLimit });
     return sendJson(res, 200, { ...result, sisaDetail: await countPendingAdjustmentDetails() });
+  }
+
+  // ---------- penjualan ----------
+
+  if (pathname === '/api/sales/summary' && method === 'GET') {
+    const q = url.searchParams;
+    const [ringkasan, cakupan] = await Promise.all([
+      getSalesSummary({ from: q.get('from'), to: q.get('to') }),
+      getSalesCoverage(),
+    ]);
+    return sendJson(res, 200, { ...ringkasan, coverage: cakupan });
+  }
+
+  if (pathname === '/api/sales/orders' && method === 'GET') {
+    const q = url.searchParams;
+    return sendJson(res, 200, await getSalesOrders({
+      from: q.get('from'), to: q.get('to'),
+      area: q.get('area'), platform: q.get('platform'), shop: q.get('shop'),
+      status: q.get('status'), groupBy: q.get('groupBy') || 'date',
+      limit: Number(q.get('limit')) || 1000,
+    }));
+  }
+
+  if (pathname === '/api/sales/sku' && method === 'GET') {
+    const q = url.searchParams;
+    return sendJson(res, 200, await getSalesSku({
+      from: q.get('from'), to: q.get('to'),
+      area: q.get('area'), platform: q.get('platform'),
+      sku: q.get('sku'), mode: q.get('mode') === 'contains' ? 'contains' : 'exact',
+      groupBy: q.get('groupBy') || 'sku',
+      limit: Number(q.get('limit')) || 500,
+    }));
+  }
+
+  if (pathname === '/api/sales/days' && method === 'GET') {
+    return sendJson(res, 200, await getSalesDays(Number(url.searchParams.get('limit')) || 400));
+  }
+
+  if (pathname === '/api/sales/pull' && method === 'POST') {
+    const body = await readBody(req);
+    const from = String(body.from || '').slice(0, 10);
+    const to = String(body.to || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      return sendJson(res, 400, { error: 'Tanggal harus berformat YYYY-MM-DD' });
+    }
+    if (from > to) return sendJson(res, 400, { error: 'Tanggal awal melewati tanggal akhir' });
+
+    /*
+     * Di serverless, rentang panjang tidak akan selesai dalam anggaran waktu
+     * function. Dibatasi supaya kegagalannya jelas sejak awal, bukan berupa
+     * timeout di tengah jalan yang menyisakan data separuh.
+     */
+    const hari = Math.round((Date.parse(to) - Date.parse(from)) / 86400000) + 1;
+    const batas = config.isServerless ? 14 : 400;
+    if (hari > batas) {
+      return sendJson(res, 400, {
+        error: `Rentang ${hari} hari terlalu panjang untuk sekali tarik (maksimum ${batas} hari di lingkungan ini). Pecah menjadi beberapa rentang.`,
+      });
+    }
+
+    const hasil = await syncSalesRange(from, to);
+    return sendJson(res, 200, { ...hasil, coverage: await getSalesCoverage() });
+  }
+
+  if (pathname === '/api/sales/refresh' && method === 'POST') {
+    const hasil = await syncSalesRecent();
+    return sendJson(res, 200, { ...hasil, coverage: await getSalesCoverage() });
   }
 
   return sendJson(res, 404, { error: 'Endpoint tidak ditemukan' });

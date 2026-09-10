@@ -188,6 +188,12 @@ Semua endpoint mengembalikan JSON kecuali `export.csv`.
 | `GET` | `/api/adjustment/export.csv` | Ekspor hasil filter ke CSV |
 | `GET` | `/api/adjustment/trx/:id` | Satu transaksi beserta barisnya |
 | `POST` | `/api/adjustment/sync` | Tarik riwayat penyesuaian terbaru |
+| `GET` | `/api/sales/summary` | Ringkasan penjualan + nilai filter + cakupan tanggal |
+| `GET` | `/api/sales/orders` | Order per hari (`from`, `to`, `area`, `shop`, `platform`, `status`, `groupBy`) |
+| `GET` | `/api/sales/sku` | Barang terjual per SKU (`sku`, `mode`, `groupBy`) |
+| `GET` | `/api/sales/days` | Hari yang sudah tersimpan |
+| `POST` | `/api/sales/pull` | Tarik rentang tanggal tertentu (`from`, `to`) |
+| `POST` | `/api/sales/refresh` | Segarkan beberapa hari terakhir |
 
 ---
 
@@ -264,6 +270,56 @@ sakelar untuk melonggarkannya.
 Berbeda dengan riwayat replenish, detail penyesuaian bisa diminta beberapa transaksi
 sekaligus, sehingga seluruh riwayat tertarik dalam hitungan detik tanpa perlu antrean
 bertahap.
+
+---
+
+## Penjualan
+
+Tab **Penjualan** menarik agregat harian dari halaman Report OCS. Data mentah order
+berjumlah **19,6 juta baris**, jadi yang disimpan adalah ringkasan hariannya — bukan
+barisan order satu per satu.
+
+| Tabel | Sumber OCS | Isi |
+|---|---|---|
+| `sales_order_status_daily` | `/Report/OrderPerShopReport` | Jumlah order per tanggal x brand x platform x status |
+| `sales_order_shop_daily` | idem | Total order, SOI, dan MOI per tanggal x brand |
+| `sales_sku_daily` | `/Report/OrderPerSkuReport` | Qty terjual per tanggal x SKU x platform |
+| `sales_sync_day` | — | Catatan hari mana saja yang sudah ditarik |
+
+### Audit status
+
+`/MasterData/GetStatusList` mengembalikan **32 entri, tetapi hanya 31 kode unik dan 31
+nama unik**:
+
+- Kode **30200** dipakai dua nama sekaligus: `SHIPPING_LOST` dan `SHIPPING_DAMAGED`.
+  Menyaring dengan kode itu tidak bisa membedakan keduanya.
+- Nama **`CANCELLED`** punya dua kode: **11100** dan **90000**.
+
+Laporan Order tidak memakai 32 status itu, melainkan **13 kelompok**: `UNPAID`,
+`IN_CANCEL`, `CANCELLED`, `READY_TO_PROCESS`, `PROCESSED`, `PICK_ASSIGNED`, `PICKED`,
+`SORTED`, `PACKED`, `MANIFESTED`, `IN_TRANSIT`, `DELIVERED`, `RETURN`.
+
+Pengelompokan itu terbukti utuh: pada 128 baris selama 1–9 September, jumlah 13 kolom
+sama persis dengan `TotalOrder` — 260.675 order, selisih nol. Status mentah seperti
+`COMPLETED`, `PICKING`, dan `BYPASS` terlipat ke dalam salah satu kelompok.
+
+Karena itu penyaringan status di aplikasi ini memakai **13 nama kelompok**, bukan kode
+numerik — sesuai yang benar-benar dikembalikan laporan.
+
+### Tidak ada penarikan ganda
+
+Isi satu hari **bisa berubah** setelah hari itu lewat, karena order berpindah status.
+Karena itu penarikan ulang **menghapus dulu seluruh baris tanggal tersebut lalu menulis
+ulang**, bukan menambahkan. Menarik rentang yang sama berkali-kali karena itu selalu
+menghasilkan angka yang sama.
+
+Penghapusan mencakup gabungan hari yang diminta dan hari yang benar-benar dikembalikan
+server — keduanya perlu, karena hari yang transaksinya hilang harus ikut bersih, dan
+batas rentang di sisi server pernah menyertakan hari di luar permintaan.
+
+Rentang penarikan ditentukan sendiri dari bagian **Tarik Data**. Worker menyegarkan
+beberapa hari terakhir tiap putaran, sebanyak `sales_resync_days` di halaman Pengaturan
+(bawaan 7 hari).
 
 ---
 

@@ -2,6 +2,7 @@ import { ensureSchema, getSettings, closePool } from './db.js';
 import { runSync, INSTANCE_ID } from './sync.js';
 import { syncReplenish, countPendingDetails } from './replenish.js';
 import { syncAdjustment } from './adjustment.js';
+import { syncSalesRecent } from './sales.js';
 import { config } from './config.js';
 
 /**
@@ -75,6 +76,18 @@ async function tick() {
         );
       } catch (err) {
         log('adjustment GAGAL —', err.message);
+      }
+
+      try {
+        // Menyegarkan beberapa hari terakhir saja. Hari lama sudah stabil,
+        // sedangkan hari terbaru masih berubah karena order berpindah status.
+        const sl = await syncSalesRecent();
+        log(
+          `penjualan — ${sl.hari} hari (${sl.from} s/d ${sl.to}), ` +
+          `${sl.orderRows} baris order, ${sl.skuRows} baris SKU (${sl.durationMs} ms)`,
+        );
+      } catch (err) {
+        log('penjualan GAGAL —', err.message);
       }
     } else {
       consecutiveFailures++;

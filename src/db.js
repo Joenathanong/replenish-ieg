@@ -295,6 +295,68 @@ export const SCHEMA_STATEMENTS = [
      KEY idx_adjline_sku (seller_sku)
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 
+  /*
+   * Penjualan harian dari halaman Report OCS.
+   *
+   * Data mentahnya berjumlah 19,6 juta baris order, jadi yang disimpan adalah
+   * agregat harian dari endpoint report — bukan barisan order satu per satu.
+   *
+   * Semua tabel di bawah berkunci tanggal. Isi satu hari bisa berubah karena
+   * order berpindah status, sehingga penarikan ulang menghapus dulu baris hari
+   * itu lalu menulis ulang. Dengan begitu menarik rentang yang sama berkali-kali
+   * tidak pernah menggandakan angka.
+   */
+  `CREATE TABLE IF NOT EXISTS sales_order_shop_daily (
+     sales_date  DATE         NOT NULL,
+     shop_name   VARCHAR(60)  NOT NULL,
+     area        VARCHAR(60)  NOT NULL,
+     total_order INT          NOT NULL DEFAULT 0,
+     soi         INT          NOT NULL DEFAULT 0,
+     moi         INT          NOT NULL DEFAULT 0,
+     PRIMARY KEY (sales_date, shop_name, area),
+     KEY idx_sos_date (sales_date)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  /*
+   * Jumlah order per status disimpan sebagai baris, bukan 13 kolom tetap.
+   * OCS mengelompokkan 32 status mentah menjadi 13 kelompok; bentuk baris
+   * membuat penambahan kelompok baru tidak menuntut perubahan skema, dan
+   * penyaringan per status menjadi klausa WHERE biasa.
+   */
+  `CREATE TABLE IF NOT EXISTS sales_order_status_daily (
+     sales_date       DATE        NOT NULL,
+     shop_name        VARCHAR(60) NOT NULL,
+     area             VARCHAR(60) NOT NULL,
+     commerce_platform VARCHAR(40) NOT NULL,
+     status           VARCHAR(40) NOT NULL,
+     order_count      INT         NOT NULL DEFAULT 0,
+     PRIMARY KEY (sales_date, shop_name, area, commerce_platform, status),
+     KEY idx_sod_date (sales_date),
+     KEY idx_sod_status (status, sales_date),
+     KEY idx_sod_platform (commerce_platform, sales_date)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  `CREATE TABLE IF NOT EXISTS sales_sku_daily (
+     sales_date        DATE         NOT NULL,
+     seller_sku        VARCHAR(120) COLLATE utf8mb4_bin NOT NULL,
+     area              VARCHAR(60)  NOT NULL,
+     commerce_platform VARCHAR(40)  NOT NULL,
+     qty               INT          NOT NULL DEFAULT 0,
+     PRIMARY KEY (sales_date, seller_sku, area, commerce_platform),
+     KEY idx_ssd_date (sales_date),
+     KEY idx_ssd_sku (seller_sku, sales_date),
+     KEY idx_ssd_platform (commerce_platform, sales_date)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  /* Catatan cakupan: hari mana saja yang sudah pernah ditarik, dan kapan. */
+  `CREATE TABLE IF NOT EXISTS sales_sync_day (
+     sales_date  DATE        NOT NULL,
+     order_rows  INT         NOT NULL DEFAULT 0,
+     sku_rows    INT         NOT NULL DEFAULT 0,
+     pulled_at   VARCHAR(30) NOT NULL,
+     PRIMARY KEY (sales_date)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
   `CREATE TABLE IF NOT EXISTS sync_log (
      id          BIGINT       NOT NULL AUTO_INCREMENT,
      started_at  VARCHAR(30)  NOT NULL,
