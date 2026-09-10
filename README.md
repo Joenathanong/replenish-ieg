@@ -319,6 +319,15 @@ Penghapusan mencakup gabungan hari yang diminta dan hari yang benar-benar dikemb
 server — keduanya perlu, karena hari yang transaksinya hilang harus ikut bersih, dan
 batas rentang di sisi server pernah menyertakan hari di luar permintaan.
 
+Permintaan satu hari (`from` sama dengan `to`) dilebarkan menjadi dua hari, karena OCS
+menjawab rentang nol-panjang dengan kosong. Tanpa pelebaran itu, potongan terakhir yang
+kebetulan berisi satu hari tersimpan sebagai hari kosong — tercatat "sudah ditarik"
+padahal datanya tidak pernah datang.
+
+Halaman Penjualan menandai dua keadaan berbeda: **hari bolong** (belum pernah ditarik)
+dan **hari kosong** (tercatat ditarik tetapi tanpa satu baris pun). Yang kedua lebih
+menyesatkan karena cakupannya tampak lengkap.
+
 Rentang penarikan ditentukan sendiri dari bagian **Tarik Data**. Worker menyegarkan
 beberapa hari terakhir tiap putaran, sebanyak `sales_resync_days` di halaman Pengaturan
 (bawaan 7 hari).

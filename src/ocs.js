@@ -300,8 +300,23 @@ export async function fetchAdjustmentDetails(ids) {
  * penulisan ulang dan menabrak kunci primer pada penarikan berikutnya.
  */
 function rentang(fromDate, toDate) {
-  const from = new Date(`${fromDate}T00:00:00.000Z`).toISOString();
-  const to = new Date(`${toDate}T00:00:00.000Z`).toISOString();
+  const awal = new Date(`${fromDate}T00:00:00.000Z`).getTime();
+  let akhir = new Date(`${toDate}T00:00:00.000Z`).getTime();
+
+  /*
+   * Rentang nol-panjang dijawab kosong oleh OCS, bukan berisi satu hari itu.
+   * Permintaan satu hari karena itu dilebarkan menjadi dua hari; hari tambahan
+   * yang ikut terbawa tetap tertangani, karena penghapusan sebelum penulisan
+   * memakai gabungan hari yang diminta dan hari yang benar-benar dikembalikan.
+   *
+   * Tanpa pelebaran ini, potongan terakhir yang kebetulan berisi satu hari
+   * tersimpan sebagai hari kosong — tercatat "sudah ditarik" padahal datanya
+   * tidak pernah datang.
+   */
+  if (akhir <= awal) akhir = awal + 86400_000;
+
+  const from = new Date(awal).toISOString();
+  const to = new Date(akhir).toISOString();
   return `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
 }
 

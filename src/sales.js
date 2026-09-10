@@ -373,11 +373,23 @@ export async function getSalesCoverage() {
   const adaSet = new Set((await all('SELECT sales_date FROM sales_sync_day')).map((r) => tanggalSaja(r.sales_date)));
   const bolong = daftarTanggal(tanggalSaja(row.dari), tanggalSaja(row.sampai)).filter((t) => !adaSet.has(t));
 
+  /*
+   * Hari yang tercatat sudah ditarik tetapi tidak berisi satu baris pun.
+   *
+   * Ini lebih menyesatkan daripada hari yang hilang sama sekali, karena
+   * cakupannya tampak lengkap. Pernah terjadi saat potongan terakhir kebetulan
+   * berisi satu hari dan OCS menjawab rentang nol-panjang dengan kosong.
+   */
+  const kosong = (await all(
+    'SELECT sales_date FROM sales_sync_day WHERE sku_rows = 0 AND order_rows = 0 ORDER BY sales_date',
+  )).map((r) => tanggalSaja(r.sales_date));
+
   return {
     hari,
     dari: tanggalSaja(row.dari),
     sampai: tanggalSaja(row.sampai),
     terakhir: row.terakhir,
     bolong,
+    kosong,
   };
 }

@@ -121,6 +121,17 @@ function paintSales() {
       </span>
     </div>` : '';
 
+  const kosong = (c.kosong && c.kosong.length) ? `
+    <div class="strip strip--error">
+      ${icon('error')}
+      <span>
+        <b>${fmt(c.kosong.length)} hari</b> tercatat sudah ditarik tetapi tidak berisi data:
+        ${c.kosong.slice(0, 10).map((t) => `<span class="badge badge--blocked">${esc(t)}</span>`).join(' ')}
+        ${c.kosong.length > 10 ? ` dan ${fmt(c.kosong.length - 10)} lainnya` : ''}.
+        Tarik ulang tanggal itu lewat <b>Tarik Data</b> — cakupannya tampak lengkap padahal tidak.
+      </span>
+    </div>` : '';
+
   const bolong = (c.bolong && c.bolong.length) ? `
     <div class="strip strip--warning">
       ${icon('alert')}
@@ -139,7 +150,7 @@ function paintSales() {
         Agregat harian dari halaman Report OCS — jumlah order per status dan barang terjual per SKU.
       </p>
 
-      ${peringatanKosong}${bolong}
+      ${peringatanKosong}${kosong}${bolong}
 
       <div class="tiles">${tiles}</div>
 
