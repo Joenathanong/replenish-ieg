@@ -183,6 +183,9 @@ async function render() {
     } else if (state.tab === 'transaksi') {
       // Didefinisikan di replenish-tab.js, dimuat sebelum berkas ini.
       await renderTransaksi();
+    } else if (state.tab === 'adjustment') {
+      // Didefinisikan di adjustment-tab.js, dimuat sebelum berkas ini.
+      await renderAdjustment();
     } else if (state.tab === 'riwayat') {
       state.syncLog = await api('/api/sync-log?limit=30');
       renderSyncLog();
@@ -1156,7 +1159,7 @@ const slideshow = {
 
 // ---------------------------- Routing ----------------------------
 
-const TABS = ['monitoring', 'pengaturan', 'ambang', 'transaksi', 'riwayat'];
+const TABS = ['monitoring', 'pengaturan', 'ambang', 'transaksi', 'adjustment', 'riwayat'];
 
 /**
  * Rute berbasis hash supaya tiap tab bisa di-bookmark.

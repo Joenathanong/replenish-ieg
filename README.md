@@ -183,6 +183,11 @@ Semua endpoint mengembalikan JSON kecuali `export.csv`.
 | `GET` | `/api/replenish/docs` | Daftar dokumen transfer (`status`, `search`) |
 | `GET` | `/api/replenish/doc/:id` | Satu dokumen beserta baris detailnya |
 | `POST` | `/api/replenish/sync` | Tarik riwayat replenish terbaru |
+| `GET` | `/api/adjustment/summary` | Ringkasan + nilai yang tersedia untuk filter |
+| `GET` | `/api/adjustment/search` | Cari penyesuaian (`sku`, `type`, `shop`, `user`, `from`, `to`, `remarks`) |
+| `GET` | `/api/adjustment/export.csv` | Ekspor hasil filter ke CSV |
+| `GET` | `/api/adjustment/trx/:id` | Satu transaksi beserta barisnya |
+| `POST` | `/api/adjustment/sync` | Tarik riwayat penyesuaian terbaru |
 
 ---
 
@@ -235,6 +240,30 @@ npm run backfill-replenish
 
 Aman dihentikan di tengah jalan dan dijalankan ulang — dokumen yang sudah selesai tidak
 ditarik dua kali. Setelah backfill awal, worker menyusul sisanya sendiri tiap putaran.
+
+---
+
+## Adjustment Stok
+
+Tab **Adjustment Stok** menelusuri riwayat penyesuaian stok dari OCS
+(`/stocks/update`). Satu baris di tabel berarti satu SKU pada satu transaksi.
+
+| Tabel | Sumber OCS | Isi |
+|---|---|---|
+| `adjustment_head` | `DTO_HistoryStockAdjustment` | Nomor transaksi, jenis IN/OUT, area, brand, pengguna, waktu |
+| `adjustment_line` | `POST /Stock/GetHistoryStockAdjustmentDetail` | SKU, qty penyesuaian, keterangan |
+
+Filternya bisa digabung bebas: kode SKU, jenis (IN/OUT), brand, pengguna, rentang
+tanggal, dan pencarian di kolom keterangan. Tombol **Ekspor CSV** mengikuti filter yang
+sedang aktif, bukan seluruh tabel — berguna karena tampilan dibatasi 300 baris teratas
+sedangkan ekspor mengambil semuanya.
+
+Pencocokan kode SKU **persis** secara bawaan, sama seperti Transaksi Replenish, dengan
+sakelar untuk melonggarkannya.
+
+Berbeda dengan riwayat replenish, detail penyesuaian bisa diminta beberapa transaksi
+sekaligus, sehingga seluruh riwayat tertarik dalam hitungan detik tanpa perlu antrean
+bertahap.
 
 ---
 

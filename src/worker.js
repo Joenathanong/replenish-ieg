@@ -1,6 +1,7 @@
 import { ensureSchema, getSettings, closePool } from './db.js';
 import { runSync, INSTANCE_ID } from './sync.js';
 import { syncReplenish, countPendingDetails } from './replenish.js';
+import { syncAdjustment } from './adjustment.js';
 import { config } from './config.js';
 
 /**
@@ -64,6 +65,16 @@ async function tick() {
         );
       } catch (err) {
         log('replenish GAGAL —', err.message);
+      }
+
+      try {
+        const adj = await syncAdjustment();
+        log(
+          `adjustment — ${adj.heads.stored} transaksi, ${adj.details.lines} baris ` +
+          `(${adj.durationMs} ms)`,
+        );
+      } catch (err) {
+        log('adjustment GAGAL —', err.message);
       }
     } else {
       consecutiveFailures++;

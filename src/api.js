@@ -26,6 +26,13 @@ import {
   suggestSku,
 } from './replenish-query.js';
 import { syncReplenish, countPendingDetails } from './replenish.js';
+import {
+  getAdjustmentSummary,
+  getAdjustmentFilterOptions,
+  searchAdjustment,
+  getAdjustment,
+} from './adjustment-query.js';
+import { syncAdjustment, countPendingAdjustmentDetails } from './adjustment.js';
 
 /** Batas nilai yang boleh disimpan, supaya UI tidak bisa mengirim angka merusak. */
 const SETTING_RULES = {
@@ -100,6 +107,10 @@ function dashboardOverrides(url) {
   return overrides;
 }
 
+/* Excel butuh BOM untuk membaca UTF-8, dan CRLF sebagai pemisah baris. */
+const csvBom = '﻿';
+const csvEol = '\r\n';
+
 function csvEscape(v) {
   const s = v === null || v === undefined ? '' : String(v);
   return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -119,7 +130,7 @@ function buildCsv(items) {
       i.qtyOnHand, i.availableQty, i.isActive ? 'Ya' : 'Tidak', i.updatedAt,
     ].map(csvEscape).join(';'));
   }
-  return '﻿' + lines.join('\r\n'); // BOM agar Excel membaca UTF-8 dengan benar
+  return csvBom + lines.join(csvEol);
 }
 
 /**
@@ -348,6 +359,69 @@ export async function handleApi(req, res, url) {
     const detailLimit = config.isServerless ? 40 : 300;
     const result = await syncReplenish({ detailLimit });
     return sendJson(res, 200, { ...result, sisaDetail: await countPendingDetails() });
+  }
+
+  // ---------- adjustment stok ----------
+
+  if (pathname === '/api/adjustment/summary' && method === 'GET') {
+    const [summary, filters] = await Promise.all([
+      getAdjustmentSummary(),
+      getAdjustmentFilterOptions(),
+    ]);
+    return sendJson(res, 200, { ...summary, filters });
+  }
+
+  if (pathname === '/api/adjustment/search' && method === 'GET') {
+    const q = url.searchParams;
+    return sendJson(res, 200, await searchAdjustment({
+      sku: q.get('sku'),
+      mode: q.get('mode') === 'contains' ? 'contains' : 'exact',
+      type: q.get('type'),
+      shop: q.get('shop'),
+      user: q.get('user'),
+      area: q.get('area'),
+      from: q.get('from'),
+      to: q.get('to'),
+      remarks: q.get('remarks'),
+      limit: Number(q.get('limit')) || 300,
+    }));
+  }
+
+  if (pathname === '/api/adjustment/export.csv' && method === 'GET') {
+    const q = url.searchParams;
+    // Batas dinaikkan karena ekspor memang dimaksudkan untuk mengambil semuanya.
+    const { rows } = await searchAdjustment({
+      sku: q.get('sku'),
+      mode: q.get('mode') === 'contains' ? 'contains' : 'exact',
+      type: q.get('type'), shop: q.get('shop'), user: q.get('user'), area: q.get('area'),
+      from: q.get('from'), to: q.get('to'), remarks: q.get('remarks'),
+      limit: 20000,
+    });
+    const head = ['Waktu', 'No. Transaksi', 'Jenis', 'SKU', 'Qty', 'Keterangan', 'Brand', 'Area', 'Oleh'];
+    const lines = [head.join(';')];
+    for (const r of rows) {
+      lines.push([
+        r.created_at, r.transaction_id, r.adj_type, r.seller_sku, r.qty,
+        r.remarks, r.shop_code, r.area_id, r.user_code,
+      ].map(csvEscape).join(';'));
+    }
+    const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+    return sendText(res, 200, csvBom + lines.join(csvEol), 'text/csv; charset=utf-8', {
+      'Content-Disposition': `attachment; filename="adjustment-${stamp}.csv"`,
+    });
+  }
+
+  if (pathname.startsWith('/api/adjustment/trx/') && method === 'GET') {
+    const id = decodeURIComponent(pathname.slice('/api/adjustment/trx/'.length));
+    const trx = await getAdjustment(id);
+    if (!trx) return sendJson(res, 404, { error: 'Transaksi tidak ditemukan' });
+    return sendJson(res, 200, trx);
+  }
+
+  if (pathname === '/api/adjustment/sync' && method === 'POST') {
+    const detailLimit = config.isServerless ? 500 : 2000;
+    const result = await syncAdjustment({ detailLimit });
+    return sendJson(res, 200, { ...result, sisaDetail: await countPendingAdjustmentDetails() });
   }
 
   return sendJson(res, 404, { error: 'Endpoint tidak ditemukan' });

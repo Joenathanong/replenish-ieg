@@ -245,6 +245,50 @@ export async function fetchReplenishDocDetail(id) {
   };
 }
 
+// -------------------- riwayat adjustment stok --------------------
+
+/**
+ * Header penyesuaian stok (DTO_HistoryStockAdjustment).
+ * Sama seperti log replenish: hanya bertambah dan Id-nya berurutan, jadi bisa
+ * ditarik inkremental.
+ */
+export async function fetchAdjustments(sinceId = 0) {
+  const filter = sinceId > 0 ? `&$filter=Id gt ${Math.trunc(sinceId)}` : '';
+  const data = await authedGet(
+    `/odata/DTO_HistoryStockAdjustment?$orderby=Id${filter}`,
+    RETRY_BUDGET.timeoutMs,
+    RETRY_BUDGET.attempts,
+  );
+  const rows = Array.isArray(data) ? data : data?.value;
+  if (!Array.isArray(rows)) throw new Error('Format respons DTO_HistoryStockAdjustment tidak dikenali');
+  return rows;
+}
+
+/**
+ * Baris detail beberapa transaksi sekaligus.
+ *
+ * Berbeda dengan riwayat replenish yang detailnya hanya bisa diambil satu per
+ * satu, endpoint ini menerima kumpulan Id dalam satu permintaan — sehingga
+ * seluruh riwayat bisa ditarik dalam hitungan detik tanpa perlu antrean.
+ */
+export async function fetchAdjustmentDetails(ids) {
+  if (!Array.isArray(ids) || !ids.length) return [];
+
+  const token = await getToken();
+  const post = async (auth) =>
+    requestJson(`${baseUrl}/Stock/GetHistoryStockAdjustmentDetail`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth}` },
+      body: JSON.stringify(ids),
+    }, RETRY_BUDGET.timeoutMs);
+
+  let res = await post(token);
+  if (res.status === 401) res = await post(await getToken(true));
+
+  if (!res.ok) throw new Error(`Gagal mengambil detail adjustment (HTTP ${res.status})`);
+  return Array.isArray(res.data) ? res.data : [];
+}
+
 export async function testConnection() {
   const started = Date.now();
   const token = await getToken(true);

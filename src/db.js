@@ -256,6 +256,45 @@ export const SCHEMA_STATEMENTS = [
      KEY idx_line_sku (seller_sku)
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 
+  /*
+   * Riwayat penyesuaian stok (DTO_HistoryStockAdjustment).
+   * Detailnya bisa diambil beberapa transaksi sekaligus, jadi tidak perlu
+   * antrean bertahap seperti dokumen replenish.
+   */
+  `CREATE TABLE IF NOT EXISTS adjustment_head (
+     id               BIGINT       NOT NULL,
+     transaction_id   VARCHAR(60)  NULL,
+     area_id          VARCHAR(60)  NULL,
+     shop_code        VARCHAR(60)  NULL,
+     user_code        VARCHAR(60)  NULL,
+     adj_type         VARCHAR(16)  NULL,
+     created_at       VARCHAR(30)  NOT NULL,
+     detail_synced_at VARCHAR(30)  NULL,
+     line_count       INT          NULL,
+     PRIMARY KEY (id),
+     KEY idx_adj_time (created_at),
+     KEY idx_adj_type (adj_type),
+     KEY idx_adj_trx (transaction_id),
+     KEY idx_adj_user (user_code),
+     KEY idx_adj_shop (shop_code),
+     KEY idx_adj_pending (detail_synced_at)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  /*
+   * Baris detail penyesuaian. Sumbernya tidak memberi Id per baris, sehingga
+   * kuncinya gabungan header dan nomor urut. Nomor urut dipakai — bukan SKU —
+   * supaya tetap benar seandainya satu transaksi memuat SKU yang sama dua kali.
+   */
+  `CREATE TABLE IF NOT EXISTS adjustment_line (
+     head_id    BIGINT       NOT NULL,
+     row_no     INT          NOT NULL,
+     seller_sku VARCHAR(120) COLLATE utf8mb4_bin NULL,
+     qty        INT          NOT NULL DEFAULT 0,
+     remarks    VARCHAR(500) NULL,
+     PRIMARY KEY (head_id, row_no),
+     KEY idx_adjline_sku (seller_sku)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
   `CREATE TABLE IF NOT EXISTS sync_log (
      id          BIGINT       NOT NULL AUTO_INCREMENT,
      started_at  VARCHAR(30)  NOT NULL,
