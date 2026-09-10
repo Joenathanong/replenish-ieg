@@ -306,6 +306,17 @@ function rentang(fromDate, toDate) {
 }
 
 /**
+ * Anggaran waktu khusus laporan penjualan.
+ *
+ * OCS menyegarkan materialized view untuk data terkini, sehingga rentang
+ * beberapa hari terakhir dijawab dalam hitungan detik. Rentang lama tampaknya
+ * jatuh ke pemindaian tabel order yang berisi 19,6 juta baris dan bisa memakan
+ * puluhan detik per hari — batas 90 detik sempat memutus permintaan seperti itu
+ * di tengah jalan.
+ */
+const SALES_TIMEOUT_MS = config.isServerless ? 60_000 : 240_000;
+
+/**
  * Order per shop: satu baris per tanggal x shop x area, berisi total order,
  * SOI/MOI, dan rincian per platform beserta jumlah order tiap kelompok status.
  */
@@ -313,7 +324,7 @@ export async function fetchSalesOrderReport(fromDate, toDate, { area = 'All', sh
   const data = await authedGet(
     `/Report/OrderPerShopReport?${rentang(fromDate, toDate)}&platform=${encodeURIComponent(platform)}` +
     `&shop=${encodeURIComponent(shop)}&area=${encodeURIComponent(area)}`,
-    RETRY_BUDGET.timeoutMs,
+    SALES_TIMEOUT_MS,
     RETRY_BUDGET.attempts,
   );
   return Array.isArray(data) ? data : [];
@@ -324,7 +335,7 @@ export async function fetchSalesSkuReport(fromDate, toDate, { area = 'All', shop
   const data = await authedGet(
     `/Report/OrderPerSkuReport?${rentang(fromDate, toDate)}&platform=${encodeURIComponent(platform)}` +
     `&shop=${encodeURIComponent(shop)}&area=${encodeURIComponent(area)}`,
-    RETRY_BUDGET.timeoutMs,
+    SALES_TIMEOUT_MS,
     RETRY_BUDGET.attempts,
   );
   return Array.isArray(data) ? data : [];

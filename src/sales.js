@@ -30,8 +30,17 @@ const BUKAN_STATUS = new Set(['Date', 'ShopName', 'Area', 'CommercePlatform', 'T
 
 const BATCH = 500;
 
-/** Hari per permintaan. Rentang panjang dipecah agar tidak menabrak batas waktu. */
-const HARI_PER_TARIKAN = 7;
+/*
+ * Hari per permintaan, menyesuaikan umur datanya.
+ *
+ * Data terkini dilayani materialized view OCS dan cepat, sehingga 7 hari sekali
+ * jalan tidak masalah. Data lama dipindai dari tabel order 19,6 juta baris dan
+ * bisa memakan puluhan detik per hari — potongan besar di sana justru memicu
+ * batas waktu, dan satu kegagalan membuang kerja seluruh potongan.
+ */
+const HARI_PER_TARIKAN_BARU = 7;
+const HARI_PER_TARIKAN_LAMA = 3;
+const BATAS_HARI_DIANGGAP_LAMA = 30;
 
 const hariISO = (d) => d.toISOString().slice(0, 10);
 
@@ -58,13 +67,22 @@ export function daftarTanggal(fromDate, toDate) {
   return out;
 }
 
-/** Pecah rentang menjadi potongan berisi paling banyak `HARI_PER_TARIKAN` hari. */
+/** Apakah tanggal ini tergolong lama, sehingga penarikannya berat di sisi OCS. */
+function tanggalLama(tgl) {
+  const umurHari = (Date.now() - Date.parse(`${tgl}T00:00:00.000Z`)) / 86400_000;
+  return umurHari > BATAS_HARI_DIANGGAP_LAMA;
+}
+
+/** Pecah rentang menjadi potongan, dengan ukuran menyesuaikan umur datanya. */
 function potongRentang(fromDate, toDate) {
   const tanggal = daftarTanggal(fromDate, toDate);
   const potongan = [];
-  for (let i = 0; i < tanggal.length; i += HARI_PER_TARIKAN) {
-    const bagian = tanggal.slice(i, i + HARI_PER_TARIKAN);
+  let i = 0;
+  while (i < tanggal.length) {
+    const ukuran = tanggalLama(tanggal[i]) ? HARI_PER_TARIKAN_LAMA : HARI_PER_TARIKAN_BARU;
+    const bagian = tanggal.slice(i, i + ukuran);
     potongan.push({ from: bagian[0], to: bagian[bagian.length - 1], hari: bagian });
+    i += ukuran;
   }
   return potongan;
 }
@@ -179,15 +197,32 @@ export async function syncSalesRange(fromDate, toDate, { onProgress = null, ...o
   let orderRows = 0;
   let skuRows = 0;
 
+  const gagal = [];
+
   for (let i = 0; i < potongan.length; i++) {
-    const hasil = await tarikPotongan(potongan[i], opsi);
-    hari += hasil.hari;
-    orderRows += hasil.orderRows;
-    skuRows += hasil.skuRows;
+    try {
+      const hasil = await tarikPotongan(potongan[i], opsi);
+      hari += hasil.hari;
+      orderRows += hasil.orderRows;
+      skuRows += hasil.skuRows;
+    } catch (err) {
+      /*
+       * Satu potongan yang gagal tidak boleh membatalkan sisa rentang. Hari yang
+       * sudah masuk tetap tersimpan, dan hari yang gagal tercatat di sini agar
+       * bisa ditarik ulang — bukan hilang diam-diam. Halaman Penjualan juga
+       * menandai hari bolong seperti ini.
+       */
+      gagal.push({ from: potongan[i].from, to: potongan[i].to, error: err.message });
+      console.warn(`[sales] potongan ${potongan[i].from}..${potongan[i].to} gagal: ${err.message}`);
+    }
     if (onProgress) onProgress(i + 1, potongan.length, potongan[i]);
   }
 
-  return { from: fromDate, to: toDate, hari, orderRows, skuRows, durationMs: Date.now() - t0 };
+  return {
+    from: fromDate, to: toDate, hari, orderRows, skuRows,
+    gagal, potongan: potongan.length,
+    durationMs: Date.now() - t0,
+  };
 }
 
 /**

@@ -321,6 +321,28 @@ Rentang penarikan ditentukan sendiri dari bagian **Tarik Data**. Worker menyegar
 beberapa hari terakhir tiap putaran, sebanyak `sales_resync_days` di halaman Pengaturan
 (bawaan 7 hari).
 
+### Berapa lama penarikannya
+
+Kecepatannya **sangat bergantung pada umur data**. OCS menyegarkan materialized view
+untuk data terkini (`/Report/MvRefreshInfo` melaporkan waktu penyegaran terakhir),
+sehingga rentang beberapa minggu terakhir dijawab cepat. Rentang lama tampaknya dipindai
+dari tabel order 19,6 juta baris.
+
+| Rentang | Terukur | Per hari |
+|---|---|---|
+| 7 hari terakhir | 17,6 detik | 2,5 detik |
+| Hari-hari Juli | 21 hari / ±11 menit | 31 detik |
+
+Perkiraan praktis: 30 hari ±1 menit, 90 hari ±30 menit, satu tahun ±3 jam. Halaman
+Tarik Data menghitung perkiraan ini per rentang dan menampilkannya sebelum penarikan
+dimulai, dengan tarif berbeda untuk data baru dan lama.
+
+Karena itu potongan permintaan menyesuaikan umurnya — 7 hari sekali jalan untuk data
+baru, 3 hari untuk data lama — dan batas waktunya dinaikkan menjadi 240 detik. Potongan
+yang tetap gagal **tidak menjatuhkan sisa rentang**: hari yang sudah masuk tetap
+tersimpan, potongan yang gagal dilaporkan, dan hari yang belum lengkap muncul sebagai
+"hari bolong" di halaman Penjualan.
+
 ---
 
 ## Catatan keamanan

@@ -35,6 +35,37 @@ const STATUS_NADA = {
 function hariIni() { return new Date().toISOString().slice(0, 10); }
 function hariLalu(n) { return new Date(Date.now() - n * 86400000).toISOString().slice(0, 10); }
 
+/*
+ * Perkiraan durasi penarikan, berdasarkan pengukuran nyata.
+ *
+ * OCS menyegarkan materialized view untuk data terkini sehingga 30 hari
+ * terakhir dijawab ~2,5 detik per hari. Data yang lebih lama tampaknya dipindai
+ * dari tabel order 19,6 juta baris dan memakan ~31 detik per hari — dua belas
+ * kali lebih lambat. Satu angka rata-rata akan menyesatkan, jadi keduanya
+ * dihitung terpisah.
+ */
+const DETIK_PER_HARI_BARU = 2.5;
+const DETIK_PER_HARI_LAMA = 31;
+const BATAS_HARI_LAMA = 30;
+
+function perkiraanDetik(from, to) {
+  const awal = Date.parse(`${from}T00:00:00Z`);
+  const akhir = Date.parse(`${to}T00:00:00Z`);
+  const batas = Date.now() - BATAS_HARI_LAMA * 86400000;
+  let detik = 0;
+  for (let t = awal; t <= akhir; t += 86400000) {
+    detik += t < batas ? DETIK_PER_HARI_LAMA : DETIK_PER_HARI_BARU;
+  }
+  return Math.round(detik);
+}
+
+function formatDurasi(detik) {
+  if (detik < 90) return `${detik} detik`;
+  const menit = Math.round(detik / 60);
+  if (menit < 90) return `${menit} menit`;
+  return `${(menit / 60).toFixed(1)} jam`;
+}
+
 async function renderSales() {
   const main = $('#main');
   main.innerHTML = `<div class="page"><p class="muted">Memuat…</p></div>`;
@@ -445,10 +476,12 @@ function paintTarik() {
         <div class="field">
           <label class="field__label">Pintasan</label>
           <div class="row">
-            <button class="btn btn--sm" data-sl-cepat="7">7 hari</button>
-            <button class="btn btn--sm" data-sl-cepat="30">30 hari</button>
-            <button class="btn btn--sm" data-sl-cepat="90">90 hari</button>
-            <button class="btn btn--sm" data-sl-cepat="365">1 tahun</button>
+            ${[7, 30, 90, 365].map((n) => {
+              const d = perkiraanDetik(hariLalu(n - 1), hariIni());
+              return `<button class="btn btn--sm" data-sl-cepat="${n}" title="Perkiraan ${formatDurasi(d)}">
+                        ${n === 365 ? '1 tahun' : n + ' hari'} <span class="muted">~${formatDurasi(d)}</span>
+                      </button>`;
+            }).join('')}
           </div>
         </div>
         <div class="toolbar__spacer"></div>
@@ -484,20 +517,30 @@ function paintTarik() {
     btn.disabled = true;
     const asli = btn.innerHTML;
     btn.innerHTML = `<span class="spinner"></span><span>Menarik…</span>`;
+    const perkiraan = formatDurasi(perkiraanDetik(from, to));
     pesan.innerHTML = `
       <div class="strip">
         ${icon('alert')}
-        <span>Menarik <b>${fmt(hari)} hari</b> dari OCS. Perkiraan sekitar
-        ${Math.max(1, Math.round(hari * 4 / 60))} menit — jangan tutup halaman ini.</span>
+        <span>
+          Menarik <b>${fmt(hari)} hari</b> dari OCS, perkiraan <b>${perkiraan}</b> — jangan tutup halaman ini.
+          Data lebih dari 30 hari ke belakang jauh lebih lambat karena tidak dilayani
+          ringkasan siap pakai di OCS.
+        </span>
       </div>`;
 
     try {
       const r = await api('/api/sales/pull', { method: 'POST', body: JSON.stringify({ from, to }) });
+      const adaGagal = r.gagal && r.gagal.length;
       pesan.innerHTML = `
-        <div class="strip strip--success">
-          ${icon('check')}
-          <span>Selesai: <b>${fmt(r.hari)} hari</b>, ${fmt(r.orderRows)} baris order dan
-          ${fmt(r.skuRows)} baris SKU, dalam ${Math.round(r.durationMs / 1000)} detik.</span>
+        <div class="strip ${adaGagal ? 'strip--warning' : 'strip--success'}">
+          ${icon(adaGagal ? 'alert' : 'check')}
+          <span>
+            Selesai: <b>${fmt(r.hari)} hari</b>, ${fmt(r.orderRows)} baris order dan
+            ${fmt(r.skuRows)} baris SKU, dalam ${formatDurasi(Math.round(r.durationMs / 1000))}.
+            ${adaGagal ? `<br><b>${r.gagal.length} potongan gagal</b> dan hari di dalamnya belum lengkap:
+              ${r.gagal.map((g) => `<span class="badge badge--blocked">${esc(g.from)}…${esc(g.to)}</span>`).join(' ')}
+              — tarik ulang rentang itu saja, aman diulang.` : ''}
+          </span>
         </div>`;
       SL.tarik = { from, to, berjalan: false };
       SL.ringkasan = await api(`/api/sales/summary?from=${SL.nilai.from}&to=${SL.nilai.to}`);
