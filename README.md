@@ -424,11 +424,105 @@ tersimpan, potongan yang gagal dilaporkan, dan hari yang belum lengkap muncul se
 
 ---
 
+## ATP Monitoring
+
+ATP (*Available To Promise*) menjawab satu pertanyaan: **dari barang yang memang
+dijual di sebuah cabang, berapa persen yang stoknya cukup untuk dijanjikan hari ini?**
+
+Rumusnya sengaja dibuat sederhana supaya bisa dipertanggungjawabkan:
+
+```
+ATP % = jumlah SKU aktif yang stoknya > ambang
+        ------------------------------------- x 100
+              jumlah SKU aktif di cabang itu
+```
+
+Ambangnya **5 pcs**. Stok di atas 5 dihitung *tersedia*, 5 ke bawah dihitung *kosong* —
+sisa segitu tidak layak dijanjikan ke pembeli. Angka ini bisa diubah di Pengaturan.
+
+### Dari mana datanya
+
+Tiga sumber OCS digabung jadi satu tabel master:
+
+| Sumber | Endpoint | Yang diambil |
+|---|---|---|
+| `/master/sku-rack` | `MasterData/GetSkuRack` | nama barang, kode SAP, **brand/shop** |
+| `/stocks/view-v2` | `odata/DTO_WmsItemStockLiteV2` | stok per area, status aktif OCS |
+| `/master/bundle` | `MasterData/GetBundle` | komponen tiap produk bundling |
+
+Penarikan ATP memakai **akun tersendiri** (`OCS_ATP_USERNAME` / `OCS_ATP_PASSWORD`),
+bukan akun yang dipakai monitoring replenish. Alasannya: hak akses area menempel pada
+akun. Akun `ADMIN` hanya melihat area "Pusat", sedangkan akun ATP melihat kelima cabang.
+Token keduanya disimpan terpisah supaya tidak saling menimpa.
+
+**Brand bundle diturunkan dari komponennya.** `GetSkuRack` hanya memuat barang yang
+dirak, dan bundle tidak pernah dirak — sehingga 1.857 dari 2.525 SKU tadinya masuk
+kelompok "(tanpa brand)" dan membuat pengelompokan brand tidak ada gunanya. Sekarang
+brand sebuah bundle diambil dari brand komponen yang paling dominan di dalamnya.
+
+### Aktif di cabang mana
+
+Tidak semua cabang menerima barang yang sama. Status aktif punya dua lapis:
+
+- `is_active_ocs` — apa kata OCS, disegarkan setiap penarikan.
+- `is_active_override` — centang manual di halaman Master Data.
+
+Yang berlaku adalah `COALESCE(override, ocs)`: selama tidak ada centang manual,
+OCS yang menentukan. Sekali dicentang manual, centang itu menang dan bertahan
+walau OCS berubah. Mengosongkan override mengembalikan kendali ke OCS.
+
+### Rekaman harian
+
+Setiap hari pukul **07:00 WIB** hasil perhitungan disimpan ke `atp_snapshot`,
+satu baris per cabang x brand x kategori. Pemeriksaannya dilakukan worker tiap
+putaran, bukan lewat penjadwal terpisah — jadi kalau worker sempat mati melewati
+jam 7, rekamannya tetap terambil begitu worker hidup lagi. Menyimpan tanggal yang
+sama dua kali menimpa baris lama, tidak menggandakannya.
+
+Master ATP ditarik paling sering **setengah jam sekali**, karena sekali tarik
+memakan sekitar satu menit dan datanya tidak berubah secepat stok. Pengecualiannya
+saat rekaman harian hendak diambil: di situ master dipaksa segar lebih dulu.
+
+### Cabang
+
+Kelima cabang OCS (Pusat, Surabaya, Medan, Makassar, Yogyakarta) terdaftar otomatis
+dan **tidak bisa dihapus** dari aplikasi — kalau cabangnya benar-benar tutup,
+hapus dari OCS. Cabang baru di luar OCS bisa ditambahkan manual lewat halaman Cabang,
+misalnya untuk gudang yang belum masuk sistem.
+
+### Pengaturan
+
+| Kunci | Bawaan | Arti |
+|---|---|---|
+| `atp_stock_field` | `qty_on_hand` | kolom stok yang dipakai: `qty_on_hand`, `available_qty`, atau `qty_rack` |
+| `atp_threshold` | `5` | stok di atas angka ini dianggap tersedia |
+| `atp_snapshot_hour` | `7` | jam WIB pengambilan rekaman harian |
+
+Mengganti `atp_stock_field` mengubah angka ATP saat itu juga, tapi **tidak** menulis
+ulang rekaman lama — tiap baris `atp_snapshot` menyimpan kolom dan ambang yang berlaku
+ketika ia diambil, supaya tren tidak berubah arti secara diam-diam.
+
+### API
+
+| Endpoint | Kegunaan |
+|---|---|
+| `GET /api/atp/dashboard` | ringkasan: total, per cabang, per brand, matriks, tren |
+| `GET /api/atp/master` | master data per SKU x cabang (filter `search`, `shop`, `category`, `branch`, `status`) |
+| `GET /api/atp/bundle/:sku` | komponen satu bundle beserta stoknya per cabang |
+| `PUT /api/atp/override` | ubah centang aktif manual satu SKU di satu cabang |
+| `GET /api/atp/history` | riwayat rekaman harian |
+| `GET/POST/PUT/DELETE /api/atp/branches` | kelola cabang |
+| `POST /api/atp/sync` | tarik master ATP sekarang |
+| `POST /api/atp/snapshot` | simpan rekaman untuk hari ini |
+
+---
+
 ## Catatan keamanan
 
 Kredensial `ADMIN` punya klaim akses penuh (`ACCESS: ["ADMIN"]`), padahal aplikasi ini
 hanya perlu membaca stok. Sebaiknya minta tim OCS membuatkan user khusus integrasi
-dengan hak baca saja, lalu ganti isi `.env`.
+dengan hak baca saja, lalu ganti isi `.env`. Hal yang sama berlaku untuk akun ATP —
+ia dipakai hanya karena kebetulan punya akses kelima area, bukan karena butuh hak tulis.
 
 Aplikasi ini juga belum punya autentikasi sendiri — siapa pun yang bisa menjangkau
 port 3000 dapat melihat dashboard dan mengubah pengaturan. Selama hanya dijalankan di

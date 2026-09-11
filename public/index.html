@@ -27,6 +27,7 @@
   <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 21 5 14h4V3h6v11h4z"/></symbol>
   <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m12 3 7 7h-4v11H9V10H5z"/></symbol>
   <symbol id="i-truck" viewBox="0 0 24 24"><path d="M18 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM19.5 9.5h-3V12h5.46zM6 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM20 8l3 4v5h-2a3 3 0 0 1-6 0H9a3 3 0 0 1-6 0H1V6a2 2 0 0 1 2-2h12v4z"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9 8.9 8.9 0 0 0 2.1 5.8l1.5-1.3A6.9 6.9 0 0 1 5 12a7 7 0 0 1 14 0 6.9 6.9 0 0 1-1.6 4.5l1.5 1.3A8.9 8.9 0 0 0 21 12a9 9 0 0 0-9-9zm4.2 4.4-4.9 3.3A1.9 1.9 0 0 0 12 14a2 2 0 0 0 2-2 1.9 1.9 0 0 0-.3-1l3.2-4z"/></symbol>
   <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18v-2H5V3zm4 12h2v4H7zm4-6h2v10h-2zm4 3h2v7h-2zm4-7h2v14h-2z"/></symbol>
   <symbol id="i-adjust" viewBox="0 0 24 24"><path d="M3 17v2h6v-2zM3 5v2h10V5zm10 16v-2h8v-2h-8v-2h-2v6zM7 9v2H3v2h4v2h2V9zm14 4v-2H11v2zm-6-4h2V7h4V5h-4V3h-2z"/></symbol>
   <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM8 13h8v2H8zm0 4h8v2H8z"/></symbol>
@@ -64,6 +65,9 @@
   <button class="tabbar__item" data-tab="transaksi">
     <svg class="icon"><use href="#i-truck"/></svg> Transaksi Replenish
   </button>
+  <button class="tabbar__item" data-tab="atp">
+    <svg class="icon"><use href="#i-gauge"/></svg> ATP Monitoring
+  </button>
   <button class="tabbar__item" data-tab="penjualan">
     <svg class="icon"><use href="#i-chart"/></svg> Penjualan
   </button>
@@ -83,6 +87,8 @@
 <script src="/js/replenish-tab.js"></script>
 <script src="/js/adjustment-tab.js"></script>
 <script src="/js/sales-tab.js"></script>
+<script src="/js/atp-tab.js"></script>
+<script src="/js/atp-views.js"></script>
 <script src="/js/app.js"></script>
 </body>
 </html>

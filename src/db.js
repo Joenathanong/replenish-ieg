@@ -357,6 +357,93 @@ export const SCHEMA_STATEMENTS = [
      PRIMARY KEY (sales_date)
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 
+  /*
+   * ATP Monitoring.
+   *
+   * Cabang. Yang bersumber dari OCS punya `ocs_area`; cabang yang didaftarkan
+   * manual dibiarkan kosong dan stoknya menunggu sumber data.
+   */
+  `CREATE TABLE IF NOT EXISTS atp_branch (
+     code       VARCHAR(40)  NOT NULL,
+     name       VARCHAR(120) NOT NULL,
+     ocs_area   VARCHAR(60)  NULL,
+     is_active  TINYINT      NOT NULL DEFAULT 1,
+     sort_order INT          NOT NULL DEFAULT 100,
+     note       VARCHAR(200) NULL,
+     created_at VARCHAR(30)  NOT NULL,
+     PRIMARY KEY (code),
+     KEY idx_branch_area (ocs_area)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  /* Master SKU, satu baris per SKU tanpa memandang cabang. */
+  `CREATE TABLE IF NOT EXISTS atp_sku (
+     sku         VARCHAR(120) COLLATE utf8mb4_bin NOT NULL,
+     name        VARCHAR(512) NULL,
+     category    VARCHAR(40)  NULL,
+     shop_code   VARCHAR(60)  NULL,
+     sap_code    VARCHAR(60)  NULL,
+     barcode     VARCHAR(60)  NULL,
+     is_bundle   TINYINT      NOT NULL DEFAULT 0,
+     updated_at  VARCHAR(30)  NOT NULL,
+     PRIMARY KEY (sku),
+     KEY idx_atpsku_shop (shop_code),
+     KEY idx_atpsku_cat (category)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  /*
+   * Stok dan status aktif per SKU per cabang.
+   *
+   * `is_active_ocs` datang dari OCS dan ditimpa tiap sinkronisasi.
+   * `is_active_override` diisi manusia dan TIDAK pernah disentuh sinkronisasi —
+   * itulah gunanya dua kolom terpisah: keputusan tim tidak boleh hilang hanya
+   * karena data OCS ditarik ulang.
+   */
+  `CREATE TABLE IF NOT EXISTS atp_sku_branch (
+     sku               VARCHAR(120) COLLATE utf8mb4_bin NOT NULL,
+     branch_code       VARCHAR(40)  NOT NULL,
+     qty_on_hand       INT          NOT NULL DEFAULT 0,
+     available_qty     INT          NOT NULL DEFAULT 0,
+     qty_rack          INT          NOT NULL DEFAULT 0,
+     is_active_ocs     TINYINT      NOT NULL DEFAULT 0,
+     is_active_override TINYINT     NULL,
+     updated_at        VARCHAR(30)  NOT NULL,
+     PRIMARY KEY (sku, branch_code),
+     KEY idx_asb_branch (branch_code),
+     KEY idx_asb_aktif (branch_code, is_active_ocs)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  /* Komponen bundle. Dipakai menampilkan susunan, bukan menghitung ATP. */
+  `CREATE TABLE IF NOT EXISTS atp_bundle_item (
+     bundle_sku    VARCHAR(120) COLLATE utf8mb4_bin NOT NULL,
+     component_sku VARCHAR(120) COLLATE utf8mb4_bin NOT NULL,
+     qty           INT          NOT NULL DEFAULT 1,
+     PRIMARY KEY (bundle_sku, component_sku),
+     KEY idx_abi_comp (component_sku)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  /*
+   * Rekaman ATP harian.
+   *
+   * Disimpan sebagai baris permanen, bukan dihitung ulang saat halaman dibuka,
+   * supaya angka satu hari tidak berubah sepanjang hari dan trennya terjaga
+   * walau stok terus bergerak.
+   */
+  `CREATE TABLE IF NOT EXISTS atp_snapshot (
+     snapshot_date DATE         NOT NULL,
+     branch_code   VARCHAR(40)  NOT NULL,
+     shop_code     VARCHAR(60)  NOT NULL,
+     category      VARCHAR(40)  NOT NULL,
+     active_count  INT          NOT NULL DEFAULT 0,
+     ready_count   INT          NOT NULL DEFAULT 0,
+     atp_pct       DECIMAL(6,2) NOT NULL DEFAULT 0,
+     stock_field   VARCHAR(20)  NOT NULL,
+     threshold     INT          NOT NULL,
+     taken_at      VARCHAR(30)  NOT NULL,
+     PRIMARY KEY (snapshot_date, branch_code, shop_code, category),
+     KEY idx_snap_date (snapshot_date),
+     KEY idx_snap_branch (branch_code, snapshot_date)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
   `CREATE TABLE IF NOT EXISTS sync_log (
      id          BIGINT       NOT NULL AUTO_INCREMENT,
      started_at  VARCHAR(30)  NOT NULL,

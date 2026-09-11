@@ -3,6 +3,7 @@ import { runSync, INSTANCE_ID } from './sync.js';
 import { syncReplenish, countPendingDetails } from './replenish.js';
 import { syncAdjustment } from './adjustment.js';
 import { syncSalesRecent } from './sales.js';
+import { syncAtpMaster, snapshotBilaWaktunya, perluSnapshot } from './atp.js';
 import { config } from './config.js';
 
 /**
@@ -26,6 +27,16 @@ function stamp() {
 function log(...args) {
   console.log(`[${stamp()}]`, ...args);
 }
+
+/*
+ * ATP menarik master barang, stok lima cabang, dan seluruh bundle sekaligus —
+ * sekitar satu menit kerja. Terlalu berat untuk ikut setiap putaran stok yang
+ * berjalan tiap lima menit, sedangkan datanya pun tidak berubah secepat itu.
+ * Jadi ditarik paling sering setengah jam sekali, kecuali saat rekaman harian
+ * hendak diambil — di situ angkanya harus segar.
+ */
+const ATP_JEDA_MS = 30 * 60_000;
+let atpTerakhir = 0;
 
 /** Jeda sebelum mencoba lagi setelah gagal, memanjang bertahap sampai 5 menit. */
 let consecutiveFailures = 0;
@@ -91,6 +102,25 @@ async function tick() {
         );
       } catch (err) {
         log('penjualan GAGAL —', err.message);
+      }
+
+      try {
+        const jatuhTempo = Date.now() - atpTerakhir >= ATP_JEDA_MS;
+        const mauSnapshot = (await perluSnapshot()).perlu;
+
+        if (jatuhTempo || mauSnapshot) {
+          const m = await syncAtpMaster();
+          atpTerakhir = Date.now();
+          log(
+            `atp — ${m.sku} SKU, ${m.barisCabang} baris cabang, ${m.bundle} bundle ` +
+            `di ${m.cabang} cabang (${m.durationMs} ms)`,
+          );
+        }
+
+        const snap = await snapshotBilaWaktunya();
+        if (snap.diambil) log(`atp — rekaman harian ${snap.tanggal} tersimpan, ${snap.baris} baris`);
+      } catch (err) {
+        log('atp GAGAL —', err.message);
       }
     } else {
       consecutiveFailures++;

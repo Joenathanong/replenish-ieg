@@ -371,6 +371,132 @@ export async function fetchReportFilterOptions() {
   return data && typeof data === 'object' ? data : { Areas: [], Shops: [], Channels: [] };
 }
 
+// -------------------- ATP Monitoring --------------------
+
+/*
+ * ATP memakai akun tersendiri karena hak akses area melekat pada akun.
+ * Akun utama hanya melihat area Pusat, sedangkan ATP butuh kelima cabang —
+ * jadi tokennya disimpan terpisah, bukan menimpa token akun utama.
+ */
+let atpToken = null;
+let atpExpiresAt = 0;
+let atpLogin = null;
+
+async function doAtpLogin() {
+  const user = config.ocs.atpUsername || username;
+  const pass = config.ocs.atpPassword || password;
+
+  const { ok, status, data } = await requestJson(
+    `${baseUrl}/Auth/Login`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: String(user),
+        password: String(pass),
+        companydb: String(companyDb),
+      }),
+    },
+    30_000,
+  );
+
+  if (!ok || !data?.Token) {
+    throw new Error(
+      status === 401
+        ? 'Login akun ATP gagal — periksa OCS_ATP_USERNAME / OCS_ATP_PASSWORD'
+        : `Login akun ATP gagal (HTTP ${status})`,
+    );
+  }
+
+  atpToken = data.Token;
+  const exp = decodeJwtExp(atpToken);
+  atpExpiresAt = exp ? exp - 10 * 60_000 : Date.now() + 12 * 3600_000;
+  return atpToken;
+}
+
+export async function getAtpToken(force = false) {
+  if (!force && atpToken && Date.now() < atpExpiresAt) return atpToken;
+  if (atpLogin) return atpLogin;
+  atpLogin = doAtpLogin().finally(() => { atpLogin = null; });
+  return atpLogin;
+}
+
+/** Area yang bisa dilihat akun ATP. Inilah daftar cabang yang tersedia. */
+export async function fetchAtpAreas() {
+  const token = await getAtpToken();
+  const claims = decodeJwt(token) || {};
+  if (Array.isArray(claims.AREAS) && claims.AREAS.length) return claims.AREAS;
+
+  const { ok, data } = await requestJson(`${baseUrl}/MasterData/GetAreaList`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  }, 20_000);
+  return ok && Array.isArray(data) ? data : [];
+}
+
+/** GET memakai token akun ATP, dengan percobaan ulang seperti permintaan lain. */
+async function atpGet(path, timeoutMs = 120_000, attempts = 3) {
+  let lastMessage = 'tidak diketahui';
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    let transient = false;
+    try {
+      let token = await getAtpToken();
+      let res = await requestJson(`${baseUrl}${path}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+      }, timeoutMs);
+
+      if (res.status === 401) {
+        token = await getAtpToken(true);
+        res = await requestJson(`${baseUrl}${path}`, {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${token}` },
+        }, timeoutMs);
+      }
+
+      if (res.ok) return res.data;
+
+      lastMessage = `HTTP ${res.status}`;
+      transient = TRANSIENT_STATUS.has(res.status);
+      if (!transient) throw new Error(`GET ${path} gagal (${lastMessage})`);
+    } catch (err) {
+      if (!transient && !/HTTP \d+/.test(err.message)) {
+        lastMessage = err.message;
+        transient = true;
+      }
+      if (!transient) throw err;
+    }
+
+    if (attempt === attempts) break;
+    const wait = Math.round(2000 * 2 ** (attempt - 1) * (0.75 + Math.random() * 0.5));
+    console.warn(`[ocs-atp] ${path} ${lastMessage}; coba lagi ${attempt + 1}/${attempts} dalam ${wait} ms`);
+    await delay(wait);
+  }
+
+  throw new Error(`GET ${path} gagal setelah ${attempts} percobaan (${lastMessage})`);
+}
+
+/** Stok seluruh cabang: 2.525 SKU x 5 area. */
+export async function fetchAtpStock() {
+  const data = await atpGet(`/odata/${stockEntity}`);
+  const rows = Array.isArray(data) ? data : data?.value;
+  if (!Array.isArray(rows)) throw new Error('Format respons stok ATP tidak dikenali');
+  return rows;
+}
+
+/** Master SKU beserta brand (ShopCode), bin, barcode, dan kode SAP. */
+export async function fetchAtpSkuRack() {
+  const data = await atpGet('/MasterData/GetSkuRack', 90_000);
+  return Array.isArray(data) ? data : [];
+}
+
+/** Definisi bundle beserta komponen dan kuantitasnya. */
+export async function fetchAtpBundles() {
+  const data = await atpGet('/MasterData/GetBundle', 60_000);
+  return Array.isArray(data) ? data : [];
+}
+
 export async function testConnection() {
   const started = Date.now();
   const token = await getToken(true);

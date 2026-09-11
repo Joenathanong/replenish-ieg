@@ -75,6 +75,16 @@ export const config = {
     password: process.env.OCS_PASSWORD || 'ADMIN',
     companyDb: process.env.OCS_COMPANY_DB || 'EJI_WMS',
     stockEntity: 'DTO_WmsItemStockLiteV2',
+
+    /*
+     * Akun terpisah untuk ATP Monitoring.
+     *
+     * Hak akses area melekat pada akun, bukan pada permintaan: akun biasa hanya
+     * melihat area Pusat, sedangkan ATP butuh kelima cabang. Bila dikosongkan,
+     * akun utama yang dipakai — dan datanya akan terbatas satu area saja.
+     */
+    atpUsername: process.env.OCS_ATP_USERNAME || '',
+    atpPassword: process.env.OCS_ATP_PASSWORD || '',
   },
   server: {
     port: num(process.env.PORT, 3000),
@@ -121,4 +131,9 @@ export const DEFAULT_SETTINGS = {
   // Berapa hari terakhir yang disegarkan tiap putaran. Bukan hanya hari ini,
   // karena order yang dibuat kemarin masih bisa berpindah status hari ini.
   sales_resync_days: 7,
+
+  // ---- ATP Monitoring ----
+  atp_stock_field: 'qty_on_hand',  // qty_on_hand | available_qty | qty_rack
+  atp_threshold: 5,                // stok di atas angka ini dianggap tersedia
+  atp_snapshot_hour: 7,            // jam WIB pengambilan rekaman harian
 };

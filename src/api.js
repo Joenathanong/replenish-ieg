@@ -40,6 +40,22 @@ import {
   getSalesDays,
 } from './sales-query.js';
 import { syncSalesRange, syncSalesRecent, syncSalesMissing, getSalesCoverage } from './sales.js';
+import {
+  getAtpDashboard,
+  getAtpMaster,
+  getBundleDetail,
+  setOverride,
+  getAtpHistory,
+} from './atp-query.js';
+import {
+  syncAtp,
+  syncAtpMaster,
+  simpanSnapshot,
+  listBranches,
+  addBranch,
+  setBranchActive,
+  deleteBranch,
+} from './atp.js';
 
 /** Batas nilai yang boleh disimpan, supaya UI tidak bisa mengirim angka merusak. */
 const SETTING_RULES = {
@@ -55,6 +71,8 @@ const SETTING_RULES = {
   slide_interval_seconds: { min: 3, max: 300 },
   new_item_days: { min: 1, max: 365 },
   sales_resync_days: { min: 1, max: 90 },
+  atp_threshold: { min: 0, max: 100000 },
+  atp_snapshot_hour: { min: 0, max: 23 },
   auto_sync_enabled: { min: 0, max: 1 },
 };
 
@@ -508,6 +526,81 @@ export async function handleApi(req, res, url) {
   if (pathname === '/api/sales/refresh' && method === 'POST') {
     const hasil = await syncSalesRecent();
     return sendJson(res, 200, { ...hasil, coverage: await getSalesCoverage() });
+  }
+
+  // ---------- ATP Monitoring ----------
+
+  if (pathname === '/api/atp/dashboard' && method === 'GET') {
+    return sendJson(res, 200, await getAtpDashboard({ shop: url.searchParams.get('shop') || 'ALL' }));
+  }
+
+  if (pathname === '/api/atp/master' && method === 'GET') {
+    const q = url.searchParams;
+    return sendJson(res, 200, await getAtpMaster({
+      search: q.get('search'), shop: q.get('shop'), category: q.get('category'),
+      branch: q.get('branch'), status: q.get('status'),
+      limit: Number(q.get('limit')) || 300,
+    }));
+  }
+
+  if (pathname.startsWith('/api/atp/bundle/') && method === 'GET') {
+    const sku = decodeURIComponent(pathname.slice('/api/atp/bundle/'.length));
+    return sendJson(res, 200, await getBundleDetail(sku));
+  }
+
+  if (pathname === '/api/atp/override' && method === 'PUT') {
+    const body = await readBody(req);
+    const sku = String(body.sku || '').trim();
+    const branch = String(body.branch || '').trim();
+    if (!sku || !branch) return sendJson(res, 400, { error: 'SKU dan cabang wajib diisi' });
+    // null mengembalikan keputusan ke OCS.
+    const nilai = body.override === null || body.override === undefined ? null : !!body.override;
+    return sendJson(res, 200, await setOverride(sku, branch, nilai));
+  }
+
+  if (pathname === '/api/atp/history' && method === 'GET') {
+    const q = url.searchParams;
+    return sendJson(res, 200, await getAtpHistory({
+      days: Number(q.get('days')) || 60,
+      branch: q.get('branch'), shop: q.get('shop'),
+    }));
+  }
+
+  if (pathname === '/api/atp/branches' && method === 'GET') {
+    return sendJson(res, 200, await listBranches());
+  }
+
+  if (pathname === '/api/atp/branches' && method === 'POST') {
+    const body = await readBody(req);
+    if (!String(body.code || '').trim()) return sendJson(res, 400, { error: 'Kode cabang wajib diisi' });
+    await addBranch(body);
+    return sendJson(res, 200, { ok: true, branches: await listBranches() });
+  }
+
+  if (pathname === '/api/atp/branches' && method === 'PUT') {
+    const body = await readBody(req);
+    await setBranchActive(String(body.code || ''), !!body.active);
+    return sendJson(res, 200, { ok: true, branches: await listBranches() });
+  }
+
+  if (pathname === '/api/atp/branches' && method === 'DELETE') {
+    const code = url.searchParams.get('code');
+    if (!code) return sendJson(res, 400, { error: 'Parameter code wajib diisi' });
+    try {
+      await deleteBranch(code);
+    } catch (err) {
+      return sendJson(res, 400, { error: err.message });
+    }
+    return sendJson(res, 200, { ok: true, branches: await listBranches() });
+  }
+
+  if (pathname === '/api/atp/sync' && method === 'POST') {
+    return sendJson(res, 200, await (url.searchParams.get('master') === '1' ? syncAtpMaster() : syncAtp()));
+  }
+
+  if (pathname === '/api/atp/snapshot' && method === 'POST') {
+    const body = await readBody(req);
+    return sendJson(res, 200, await simpanSnapshot({ tanggal: body.tanggal || null }));
   }
 
   return sendJson(res, 404, { error: 'Endpoint tidak ditemukan' });

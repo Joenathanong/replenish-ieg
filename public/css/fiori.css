@@ -665,3 +665,127 @@ table.stable .status--AMAN  { color: #6fe6ab; background: rgba(60, 210, 140, .15
 @media print {
   .shellbar, .tabbar, .toolbar { display: none; }
 }
+
+/* =========================================================================
+   ATP Monitoring
+   ========================================================================= */
+
+/*
+ * Warna status dipakai untuk kesehatan cabang karena maknanya memang baik/buruk,
+ * bukan sekadar peringkat. Angka persennya selalu ditampilkan, jadi warna tidak
+ * pernah menjadi satu-satunya penanda.
+ */
+:root {
+  --atp-good: #0ca30c;
+  --atp-warning: #fab219;
+  --atp-serious: #ec835a;
+  --atp-critical: #d03b3b;
+
+  /* Satu hue, terang ke gelap, untuk peta panas. */
+  --seq-1: #cde2fb; --seq-2: #9ec5f4; --seq-3: #6da7ec;
+  --seq-4: #3987e5; --seq-5: #256abf; --seq-6: #184f95;
+}
+
+/* ---- Angka utama ---- */
+
+.hero {
+  display: flex; align-items: flex-end; gap: 2rem; flex-wrap: wrap;
+  padding: 1.5rem 1.75rem;
+  background: linear-gradient(135deg, #0a2c5c 0%, #124a91 60%, #0f63bd 100%);
+  color: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: 1.25rem;
+}
+.hero__angka {
+  font-size: 4rem; font-weight: 700; line-height: 1;
+  letter-spacing: -.04em; font-variant-numeric: tabular-nums;
+}
+.hero__satuan { font-size: 1.75rem; font-weight: 400; opacity: .8; margin-left: .15rem; }
+.hero__label {
+  font-size: .78rem; text-transform: uppercase; letter-spacing: .07em;
+  opacity: .78; font-weight: 600; margin-bottom: .35rem;
+}
+.hero__detail { font-size: .9rem; opacity: .85; }
+.hero__pisah { width: 1px; align-self: stretch; background: rgba(255,255,255,.2); }
+
+/* ---- Batang peringkat cabang ---- */
+
+.rank { display: flex; flex-direction: column; gap: .85rem; }
+.rank__baris { display: grid; grid-template-columns: 7.5rem 1fr 5.5rem; gap: .85rem; align-items: center; }
+.rank__nama { font-weight: 600; font-size: .875rem; }
+.rank__jalur {
+  height: 10px; background: var(--neutral-bg); border-radius: var(--pill);
+  overflow: hidden; position: relative;
+}
+/* Ujung data membulat dan menempel pada garis dasar. */
+.rank__isi { height: 100%; border-radius: var(--pill); transition: width .3s ease; }
+.rank__nilai {
+  text-align: right; font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: .9375rem;
+}
+.rank__sub { font-size: .7rem; color: var(--text-muted); font-weight: 400; }
+
+.is-good     { background: var(--atp-good); }
+.is-warning  { background: var(--atp-warning); }
+.is-serious  { background: var(--atp-serious); }
+.is-critical { background: var(--atp-critical); }
+.teks-good     { color: var(--atp-good); }
+.teks-warning  { color: #9a6a00; }   /* dinaikkan kontrasnya untuk teks */
+.teks-serious  { color: #a6482a; }
+.teks-critical { color: var(--atp-critical); }
+
+/* ---- Peta panas cabang x brand ---- */
+
+table.heat { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: .8125rem; }
+table.heat th {
+  font-size: .7rem; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--text-muted); font-weight: 700; padding: .3rem .5rem; text-align: center;
+}
+table.heat th.kiri { text-align: left; }
+table.heat td { padding: 0; }
+.heat__sel {
+  display: block; padding: .6rem .4rem; border-radius: var(--radius-sm);
+  text-align: center; font-weight: 700; font-variant-numeric: tabular-nums;
+  cursor: default; transition: transform .12s ease;
+}
+.heat__sel:hover { transform: scale(1.04); }
+.heat__sel small { display: block; font-weight: 400; font-size: .68rem; opacity: .75; }
+.heat__nama { font-weight: 600; padding: .6rem .5rem; white-space: nowrap; }
+
+.skala { display: flex; align-items: center; gap: .35rem; font-size: .7rem; color: var(--text-muted); }
+.skala__kotak { width: 1.5rem; height: .55rem; border-radius: 2px; }
+
+/* ---- Grafik tren ---- */
+
+.tren { position: relative; }
+.tren svg { display: block; width: 100%; height: 220px; overflow: visible; }
+.tren__grid { stroke: var(--border); stroke-width: 1; }           /* hairline, tanpa garis putus */
+.tren__garis { fill: none; stroke: var(--brand); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.tren__area { fill: var(--brand); opacity: .08; }
+.tren__titik { fill: var(--brand); stroke: var(--surface); stroke-width: 2; }
+.tren__sumbu { font-size: .68rem; fill: var(--text-muted); }
+.tren__silang { stroke: var(--text-subtle); stroke-width: 1; }
+
+.tip {
+  position: absolute; pointer-events: none; z-index: 5;
+  background: #1a2733; color: #fff; padding: .45rem .65rem;
+  border-radius: var(--radius-sm); font-size: .75rem; white-space: nowrap;
+  box-shadow: var(--shadow); transform: translate(-50%, -120%);
+}
+.tip b { font-variant-numeric: tabular-nums; }
+
+/* ---- Master data ---- */
+
+.cabang-sel { text-align: center; white-space: nowrap; }
+.cabang-sel__qty { font-weight: 700; font-variant-numeric: tabular-nums; }
+.cabang-sel--siap .cabang-sel__qty { color: var(--atp-good); }
+.cabang-sel--kosong .cabang-sel__qty { color: var(--atp-critical); }
+.cabang-sel--nonaktif { opacity: .4; }
+
+.ceklis { cursor: pointer; width: 1.05rem; height: 1.05rem; accent-color: var(--brand); }
+.ditimpa { box-shadow: 0 0 0 2px #6b3fa0; border-radius: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rank__isi, .heat__sel { transition: none; }
+}
