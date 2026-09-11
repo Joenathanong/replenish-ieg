@@ -27,6 +27,13 @@ dengan worker di PC gudang dan dashboard di Vercel.
 
 ### Perintah lain
 
+`npm run check-markup` merender keempat sub-menu ATP di luar peramban dengan DOM
+tiruan, lalu memeriksa keseimbangan tag dan keberadaan tiap kendali. Bukan pengganti
+melihat layar, tetapi menangkap dua kesalahan yang paling sering lolos: tag tidak
+tertutup, dan kendali yang hilang karena salah tempel. Ia juga melaporkan ukuran
+markup — angka itulah yang mengungkap tabel Master Data sempat mencetak 1.485 tombol
+dalam satu halaman.
+
 | Perintah | Kegunaan |
 |---|---|
 | `npm run serve` | Server web lokal, lengkap dengan penjadwal internal |

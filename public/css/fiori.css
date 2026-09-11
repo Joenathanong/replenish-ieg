@@ -625,7 +625,20 @@ body {
 
 /* ---------------------------- Tabel ---------------------------- */
 
-.table-wrap { overflow-x: auto; }
+/*
+ * Wadah tabel: menggulir ke dua arah, dengan tinggi terbatas.
+ *
+ * Sebelumnya hanya overflow-x. Menurut spesifikasi, menyetel satu sumbu jadi
+ * auto membuat sumbu lainnya ikut menjadi wadah gulir — jadi kepala tabel yang
+ * sudah position:sticky tidak pernah punya tempat untuk menempel, dan ikut
+ * hanyut begitu halaman digulir. Pada tabel Master Data yang lima kolom
+ * angkanya mirip semua, itu membuat orang salah membaca kolom.
+ *
+ * Batas tinggi hanya berlaku ketika isinya memang melebihi; tabel pendek tidak
+ * berubah sama sekali. Angkanya menyisakan ruang untuk kepala aplikasi, tab,
+ * dan toolbar di atasnya.
+ */
+.table-wrap { overflow: auto; max-height: calc(100vh - 18rem); }
 
 table.ftable { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 
@@ -639,7 +652,7 @@ table.ftable thead th {
   background: var(--surface-alt);
   padding: 0.7rem 0.85rem;
   white-space: nowrap;
-  position: sticky; top: 0; z-index: 2;
+  position: sticky; top: 0; z-index: 3;
   box-shadow: inset 0 -1px 0 var(--border);
 }
 table.ftable thead th.num, table.ftable tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }

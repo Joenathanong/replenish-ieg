@@ -15,7 +15,8 @@
     "sync-once": "node scripts/sync-once.js",
     "import-sqlite": "node scripts/import-sqlite.js",
     "backfill-replenish": "node scripts/backfill-replenish.js",
-    "backfill-sales": "node scripts/backfill-sales.js"
+    "backfill-sales": "node scripts/backfill-sales.js",
+    "check-markup": "node scripts/check-markup.mjs"
   },
   "dependencies": {
     "mysql2": "^3.24.2"

@@ -425,19 +425,35 @@ function selCabang(it, kode, cfg) {
     : cfg.stockField === 'qty_rack' ? b.qtyRack : b.qtyOnHand;
 
   const kelas = !b.aktif ? 'cabang-sel--nonaktif' : (b.siap ? 'cabang-sel--siap' : 'cabang-sel--kosong');
+  /*
+   * Yang ditandai dan bisa dikembalikan hanyalah override yang benar-benar
+   * berbeda dari OCS.
+   *
+   * Sebelum ada ceklis massal, override adalah kekecualian yang jarang, jadi
+   * menandai semuanya masuk akal. Sesudahnya hampir setiap baris punya
+   * override — sekali salin menulis 10.100 di antaranya — sehingga cincin
+   * penanda muncul di seluruh tabel dan tombol "ikuti OCS" tercetak 1.485 kali
+   * dalam satu halaman. Keduanya berhenti bermakna, dan halamannya jadi berat.
+   *
+   * Override yang nilainya sama dengan OCS tidak ditandai: mengembalikannya
+   * tidak mengubah apa pun yang terlihat. Untuk membersihkannya menyeluruh ada
+   * tombol "Ikut Aktif OCS" di bar aksi massal.
+   */
+  const menyimpang = b.override !== null && b.override !== b.aktifOcs;
+
   const judul = `${it.sku} di ${kode} — ${qty} pcs\n` +
     `OCS: ${b.aktifOcs ? 'aktif' : 'non-aktif'}` +
     (b.override === null ? '' : `\nDitimpa manual: ${b.override ? 'aktif' : 'non-aktif'}`);
 
   return `
     <td class="cabang-sel ${kelas}" title="${esc(judul)}">
-      <input type="checkbox" class="ceklis ${b.override === null ? '' : 'ditimpa'}"
+      <input type="checkbox" class="ceklis ${menyimpang ? 'ditimpa' : ''}"
              ${b.aktif ? 'checked' : ''}
              data-atp-ceklis="${esc(it.sku)}" data-atp-branch="${esc(kode)}">
       <div class="cabang-sel__qty">${fmt(qty)}</div>
-      ${b.override === null ? '' : `<button class="btn btn--sm btn--transparent" style="padding:0 .2rem;font-size:.6rem"
+      ${menyimpang ? `<button class="btn btn--sm btn--transparent" style="padding:0 .2rem;font-size:.6rem"
           data-atp-reset-override="${esc(it.sku)}" data-atp-branch="${esc(kode)}"
-          title="Kembalikan ke status dari OCS">ikuti OCS</button>`}
+          title="Kembalikan ke status dari OCS">ikuti OCS</button>` : ''}
     </td>`;
 }
 
