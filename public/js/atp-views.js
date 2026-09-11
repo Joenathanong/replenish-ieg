@@ -16,9 +16,36 @@ function ringkasanCabang(m) {
   const r = m.ringkasan || [];
   if (!r.length) return '';
 
-  const dipilih = ATP.filterMaster.branch;
+  const f = ATP.filterMaster;
+  const dipilih = f.branch;
+
+  /*
+   * Kartu ini mengikuti penyaring, sedangkan dashboard dan Riwayat selalu
+   * menghitung seluruh katalog. Tanpa keterangan lingkup, ATP Makassar bisa
+   * terbaca 75,6% di sini dan 71,7% di Riwayat tanpa petunjuk apa pun bahwa
+   * yang satu sedang disaring ke SKU tunggal saja. Jadi lingkupnya disebutkan.
+   */
+  const lingkup = [];
+  if (f.search) lingkup.push(`pencarian "${esc(f.search)}"`);
+  if (f.shop !== 'ALL') lingkup.push(`brand ${esc(f.shop)}`);
+  if (f.category !== 'ALL') lingkup.push(f.category === 'Bundle' ? 'bundle saja' : 'SKU tunggal saja');
+  /*
+   * Cabang saja tidak mempersempit apa pun — tiap SKU punya baris di semua
+   * cabang. Yang mempersempit adalah statusnya.
+   */
+  if (f.status !== 'ALL') {
+    const L = { AKTIF: 'aktif', SIAP: 'siap', KOSONG: 'kosong' };
+    lingkup.push(`SKU yang ${L[f.status] || f.status} di ${esc(f.branch)}`);
+  }
+
+  const keterangan = lingkup.length
+    ? `<span class="badge badge--override">Disaring</span>
+       Ringkasan hanya mencakup ${lingkup.join(' · ')}, jadi angkanya <b>tidak sama</b>
+       dengan dashboard dan Riwayat yang selalu menghitung seluruh katalog.`
+    : `Seluruh katalog — angka ini sama persis dengan dashboard dan Riwayat.`;
 
   return `
+    <p class="panel__hint" style="margin:0 0 .6rem">${keterangan}</p>
     <div class="tiles" style="margin:0 0 1rem">
       ${r.map((c) => {
         // Persentase yang ditampilkan adalah ATP itu sendiri: siap dibagi yang
