@@ -534,6 +534,13 @@ misalnya untuk gudang yang belum masuk sistem.
 | `atp_threshold` | `5` | stok di atas angka ini dianggap tersedia |
 | `atp_snapshot_hour` | `7` | jam WIB pengambilan rekaman harian |
 
+Ketiganya diatur langsung dari kepala halaman ATP — pemilih **Dasar stok** dan kotak
+**Ambang** ada di sebelah tombol tarik, dan perubahannya langsung menghitung ulang.
+
+Catatan soal `qty_rack`: di luar Pusat, `QtyGudangKecil` sering bernilai negatif, jadi
+memilihnya menjatuhkan ATP ke angka yang tidak ada artinya (sekitar 4%). Kolom itu
+berguna untuk monitoring replenish, bukan untuk ATP antarcabang.
+
 Mengganti `atp_stock_field` mengubah angka ATP saat itu juga, tapi **tidak** menulis
 ulang rekaman lama — tiap baris `atp_snapshot` menyimpan kolom dan ambang yang berlaku
 ketika ia diambil, supaya tren tidak berubah arti secara diam-diam.

@@ -76,9 +76,21 @@ function paintAtp() {
         <div class="toolbar">
           <div class="segmented">${tabs}</div>
           <div class="toolbar__spacer"></div>
+          <div class="field">
+            <label class="field__label" for="atpKolom">Dasar stok</label>
+            <select class="select" id="atpKolom" title="Kolom stok yang dipakai menghitung ATP">
+              ${Object.entries(cfg.pilihanKolom || {}).map(([k, label]) =>
+                `<option value="${esc(k)}" ${cfg.stockField === k ? 'selected' : ''}>${esc(label)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="atpAmbang">Ambang &gt;</label>
+            <input class="input input--num" id="atpAmbang" type="number" min="0" max="100000"
+                   style="width:5.5rem" value="${fmt(cfg.threshold || 0)}"
+                   title="Stok di atas angka ini dihitung tersedia">
+          </div>
           <span class="panel__hint">
-            ${esc(cfg.stockFieldLabel || '')} · ambang &gt; ${fmt(cfg.threshold || 0)} pcs
-            ${d.terakhirDitarik ? `· ditarik ${fmtWaktu(d.terakhirDitarik)}` : ''}
+            ${d.terakhirDitarik ? `ditarik ${fmtWaktu(d.terakhirDitarik)}` : ''}
           </span>
           <button class="btn" id="atpSync">${icon('refresh')} Tarik dari OCS</button>
         </div>
@@ -89,6 +101,36 @@ function paintAtp() {
   $$('[data-atp-view]').forEach((b) => {
     b.onclick = () => { ATP.tampilan = b.dataset.atpView; paintAtp(); };
   });
+
+  /*
+   * Mengubah dasar stok atau ambangnya menghitung ulang ATP saat itu juga,
+   * tetapi tidak menulis ulang rekaman lama: tiap baris rekaman menyimpan
+   * kolom dan ambang yang berlaku ketika ia diambil, supaya tren tidak
+   * berubah arti secara diam-diam.
+   */
+  async function simpanSetelanAtp(perubahan, pesan) {
+    try {
+      const r = await api('/api/settings', { method: 'PUT', body: JSON.stringify(perubahan) });
+      if (r.rejected?.length) throw new Error(r.rejected[0].reason);
+      toast(pesan, 'success');
+      ATP.data = null;
+      await renderAtp();
+    } catch (err) {
+      toast(err.message, 'error');
+      await renderAtp();
+    }
+  }
+
+  $('#atpKolom').onchange = (e) => {
+    const label = e.target.options[e.target.selectedIndex].text;
+    simpanSetelanAtp({ atp_stock_field: e.target.value }, `ATP kini dihitung dari ${label}.`);
+  };
+
+  $('#atpAmbang').onchange = (e) => {
+    const n = Math.trunc(Number(e.target.value));
+    if (!Number.isFinite(n) || n < 0) return toast('Ambang harus angka bulat tak negatif.', 'error');
+    simpanSetelanAtp({ atp_threshold: n }, `Stok di atas ${n} pcs kini dihitung tersedia.`);
+  };
 
   $('#atpSync').onclick = async (e) => {
     const btn = e.currentTarget;

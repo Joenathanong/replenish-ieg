@@ -78,6 +78,16 @@ const SETTING_RULES = {
   auto_sync_enabled: { min: 0, max: 1 },
 };
 
+/*
+ * Pengaturan yang nilainya bukan angka melainkan salah satu dari daftar.
+ * Diperiksa terpisah karena jalur angka menolaknya mentah-mentah — itulah
+ * sebabnya pilihan kolom stok sempat tidak bisa disimpan dari layar sama
+ * sekali meski sudah ada di bawah lapisan.
+ */
+const SETTING_CHOICES = {
+  atp_stock_field: ['qty_on_hand', 'available_qty', 'qty_rack'],
+};
+
 export function sendJson(res, status, payload) {
   const body = JSON.stringify(payload);
   res.writeHead(status, {
@@ -286,6 +296,18 @@ export async function handleApi(req, res, url) {
     const rejected = [];
 
     for (const [key, raw] of Object.entries(body)) {
+      const pilihan = SETTING_CHOICES[key];
+      if (pilihan) {
+        const nilai = String(raw);
+        if (!pilihan.includes(nilai)) {
+          rejected.push({ key, reason: `Nilai harus salah satu dari: ${pilihan.join(', ')}` });
+          continue;
+        }
+        await setSetting(key, nilai);
+        applied[key] = nilai;
+        continue;
+      }
+
       const rule = SETTING_RULES[key];
       if (!rule) {
         rejected.push({ key, reason: 'Pengaturan tidak dikenal' });
