@@ -157,6 +157,24 @@ export async function getAtpMaster({
     one(`SELECT COUNT(*) AS c FROM atp_sku s ${clause}`, params),
   ]);
 
+  /*
+   * Ringkasan per cabang dihitung ulang dari database memakai penyaring yang
+   * sama, bukan dari baris yang kebetulan tampil. Kalau dihitung di layar,
+   * angkanya hanya mencakup 300 baris pertama dan justru menyesatkan.
+   */
+  const ringkasan = await all(
+    `SELECT b.branch_code,
+            COUNT(*)                                                   AS total,
+            SUM(${AKTIF})                                              AS aktif,
+            SUM(b.is_active_override IS NOT NULL)                      AS ditimpa,
+            SUM(${AKTIF} AND b.${cfg.stockField} > ?)                  AS siap
+       FROM atp_sku_branch b
+      WHERE b.sku IN (SELECT s.sku FROM atp_sku s ${clause})
+      GROUP BY b.branch_code`,
+    [cfg.threshold, ...params],
+  );
+  const petaRingkasan = new Map(ringkasan.map((r) => [r.branch_code, r]));
+
   // Ambil baris cabang hanya untuk SKU yang ditampilkan.
   const daftar = skus.map((r) => r.sku);
   const perCabang = new Map();
@@ -187,6 +205,17 @@ export async function getAtpMaster({
   return {
     config: cfg,
     cabang,
+    ringkasan: cabang.map((c) => {
+      const r = petaRingkasan.get(c.code);
+      return {
+        branch: c.code,
+        name: c.name,
+        total: Number(r?.total) || 0,
+        aktif: Number(r?.aktif) || 0,
+        ditimpa: Number(r?.ditimpa) || 0,
+        siap: Number(r?.siap) || 0,
+      };
+    }),
     total: Number(total?.c) || 0,
     dibatasi: skus.length < (Number(total?.c) || 0),
     items: skus.map((r) => ({

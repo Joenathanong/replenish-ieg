@@ -5,6 +5,41 @@
 
 /* ---------------------------- Master Data ---------------------------- */
 
+/**
+ * Ringkasan jumlah ceklis per cabang.
+ *
+ * Angkanya mengikuti penyaring yang sedang aktif, dan dihitung server dari
+ * seluruh hasil filter — bukan dari 300 baris yang kebetulan tampil.
+ * Kartunya bisa diklik untuk menyaring ke cabang itu saja.
+ */
+function ringkasanCabang(m) {
+  const r = m.ringkasan || [];
+  if (!r.length) return '';
+
+  const dipilih = ATP.filterMaster.branch;
+
+  return `
+    <div class="tiles" style="margin:0 0 1rem">
+      ${r.map((c) => {
+        const pct = c.total ? (c.aktif / c.total) * 100 : 0;
+        return `
+        <button class="tile tile--neutral ${dipilih === c.branch ? 'is-active' : ''}"
+                data-atp-cabang="${esc(c.branch)}"
+                title="Klik untuk menyaring ke cabang ${esc(c.name)}">
+          <span class="tile__label">${esc(c.name)}</span>
+          <span class="tile__value">${fmt(c.aktif)}</span>
+          <span class="tile__foot">
+            dari ${fmt(c.total)} SKU · ${pct.toFixed(1)}%
+            <span class="meter" style="max-width:4.5rem;margin-left:.35rem">
+              <span class="meter__fill meter__fill--brand" style="width:${pct.toFixed(1)}%"></span>
+            </span>
+            <br>${fmt(c.siap)} siap jual${c.ditimpa ? ` · ${fmt(c.ditimpa)} ditimpa manual` : ''}
+          </span>
+        </button>`;
+      }).join('')}
+    </div>`;
+}
+
 async function paintMaster() {
   const host = $('#atpBody');
   host.innerHTML = `<div class="panel__body"><p class="muted">Memuat…</p></div>`;
@@ -64,6 +99,8 @@ async function paintMaster() {
       <button class="btn" id="mReset">Bersihkan</button>
     </div>
 
+    ${ringkasanCabang(m)}
+
     <div class="panel__head" style="padding-top:0">
       <p class="panel__hint" style="margin:0">
         ${m.dibatasi
@@ -117,6 +154,17 @@ async function paintMaster() {
       paintMaster();
     };
   }
+  $$('[data-atp-cabang]').forEach((el) => {
+    el.onclick = () => {
+      const kode = el.dataset.atpCabang;
+      // Mengklik cabang yang sedang dipilih berarti melepas penyaringnya.
+      const lepas = ATP.filterMaster.branch === kode;
+      ATP.filterMaster.branch = lepas ? 'ALL' : kode;
+      if (lepas) ATP.filterMaster.status = 'ALL';
+      paintMaster();
+    };
+  });
+
   $('#mReset').onclick = () => {
     ATP.filterMaster = { search: '', shop: 'ALL', category: 'ALL', branch: 'ALL', status: 'ALL' };
     paintMaster();

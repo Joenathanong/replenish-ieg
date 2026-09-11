@@ -500,6 +500,8 @@ table.ftable tbody tr.row--minus:hover { background: linear-gradient(90deg, #ffd
 .meter__fill--negative { background: var(--negative); }
 .meter__fill--critical { background: var(--critical); }
 .meter__fill--positive { background: var(--positive); }
+/* Cakupan katalog bukan kabar baik atau buruk, jadi warnanya netral. */
+.meter__fill--brand { background: var(--brand); }
 
 .empty { padding: 3.5rem 1rem; text-align: center; color: var(--text-muted); }
 .empty .icon { color: var(--positive); width: 2rem; height: 2rem; margin-bottom: .5rem; }
