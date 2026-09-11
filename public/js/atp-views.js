@@ -73,6 +73,42 @@ function ringkasanCabang(m) {
 }
 
 /**
+ * Rumpun cabang, diurutkan mengikuti urutan cabangnya.
+ *
+ * Dibaca dari data, bukan ditulis mati di sini: cabang baru yang ditambahkan
+ * lewat halaman Cabang langsung ikut rumpunnya tanpa menyentuh kode ini.
+ */
+function daftarRumpun(cab) {
+  const peta = new Map();
+  for (const c of cab) {
+    if (!c.group_code) continue;
+    if (!peta.has(c.group_code)) peta.set(c.group_code, []);
+    peta.get(c.group_code).push(c);
+  }
+  return [...peta.entries()];
+}
+
+/**
+ * Terjemahkan pilihan "Terapkan ke" jadi daftar kode cabang.
+ *
+ * Cabang sumber selalu dikeluarkan, termasuk ketika ia kebetulan anggota
+ * rumpun yang dipilih — menyalin sebuah cabang ke dirinya sendiri tidak ada
+ * artinya, dan menolak seluruh aksi hanya karena itu malah menyusahkan.
+ */
+function tujuanMassal(pilihan, cab, asal) {
+  let daftar;
+  if (pilihan.startsWith('grup:')) {
+    const kode = pilihan.slice(5);
+    daftar = cab.filter((c) => c.group_code === kode);
+  } else if (pilihan === 'SELAIN') {
+    daftar = cab;
+  } else {
+    daftar = cab.filter((c) => c.code === pilihan);
+  }
+  return daftar.map((c) => c.code).filter((k) => k !== asal);
+}
+
+/**
  * Aksi massal untuk ceklis.
  *
  * Lingkupnya mengikuti pencarian, brand, dan jenis yang sedang aktif — sama
@@ -84,8 +120,9 @@ function barAksiMassal(m) {
   if (cab.length < 2) return '';
 
   const asal = ATP.massalSumber || (cab.some((c) => c.code === 'Pusat') ? 'Pusat' : cab[0].code);
-  const tujuan = ATP.massalTujuan || 'OXAR';
+  const tujuan = ATP.massalTujuan || 'grup:OXAR';
   const lain = cab.filter((c) => c.code !== asal);
+  const grup = daftarRumpun(cab);
 
   return `
     <div class="toolbar" style="margin-bottom:1rem">
@@ -98,7 +135,15 @@ function barAksiMassal(m) {
       <div class="field">
         <label class="field__label" for="bTujuan">Terapkan ke</label>
         <select class="select" id="bTujuan">
-          <option value="OXAR" ${tujuan === 'OXAR' ? 'selected' : ''}>Semua cabang selain ${esc(asal)} (${lain.length})</option>
+          ${grup.map(([kode, anggota]) => {
+            const pakai = anggota.filter((c) => c.code !== asal);
+            if (!pakai.length) return '';
+            const nilai = `grup:${kode}`;
+            return `<option value="${esc(nilai)}" ${tujuan === nilai ? 'selected' : ''}>
+              Rumpun ${esc(kode)} — ${pakai.map((c) => esc(c.name)).join(', ')}
+            </option>`;
+          }).join('')}
+          <option value="SELAIN" ${tujuan === 'SELAIN' ? 'selected' : ''}>Semua cabang selain ${esc(asal)} (${lain.length})</option>
           ${lain.map((c) => `<option value="${esc(c.code)}" ${tujuan === c.code ? 'selected' : ''}>${esc(c.name)} saja</option>`).join('')}
         </select>
       </div>
@@ -261,7 +306,7 @@ async function paintMaster() {
 
   const bS = $('#bSumber');
   const bT = $('#bTujuan');
-  if (bS) bS.onchange = (e) => { ATP.massalSumber = e.target.value; ATP.massalTujuan = 'OXAR'; paintMaster(); };
+  if (bS) bS.onchange = (e) => { ATP.massalSumber = e.target.value; ATP.massalTujuan = 'grup:OXAR'; paintMaster(); };
   if (bT) bT.onchange = (e) => { ATP.massalTujuan = e.target.value; };
 
   $$('[data-massal]').forEach((el) => {
@@ -270,10 +315,9 @@ async function paintMaster() {
       const f = ATP.filterMaster;
       const cab = m.cabang || [];
       const asal = ATP.massalSumber || (cab.some((c) => c.code === 'Pusat') ? 'Pusat' : cab[0].code);
-      const pilihTujuan = ATP.massalTujuan || 'OXAR';
-      const targets = pilihTujuan === 'OXAR'
-        ? cab.filter((c) => c.code !== asal).map((c) => c.code)
-        : [pilihTujuan];
+      const pilihTujuan = ATP.massalTujuan || 'grup:OXAR';
+      const targets = tujuanMassal(pilihTujuan, cab, asal);
+      if (!targets.length) return toast('Tidak ada cabang tujuan selain cabang sumber.', 'error');
 
       const lingkup = [];
       if (f.search) lingkup.push(`pencarian "${esc(f.search)}"`);
@@ -481,10 +525,15 @@ async function paintCabang() {
         tercatat di sini tetapi <b>stoknya belum terisi</b> sampai ada sumber datanya di OCS —
         ia akan tampil kosong, bukan nol yang keliru.
       </p>
+      <p class="panel__hint" style="margin:0 0 1rem">
+        <b>Rumpun</b> mengelompokkan cabang supaya tombol ceklis massal di Master Data bisa
+        menyasar semuanya sekali klik. Bawaannya <b>IEG</b> untuk Pusat dan <b>OXAR</b> untuk
+        keempat cabang lain; isi rumpun yang sama pada cabang baru agar ikut terpilih.
+      </p>
 
       <div class="table-wrap">
         <table class="ftable">
-          <thead><tr><th>Kode</th><th>Nama</th><th>Sumber</th><th>Ditampilkan</th><th>Catatan</th><th class="num"></th></tr></thead>
+          <thead><tr><th>Kode</th><th>Nama</th><th>Sumber</th><th>Rumpun</th><th>Ditampilkan</th><th>Catatan</th><th class="num"></th></tr></thead>
           <tbody>
             ${ATP.cabang.map((c) => `
               <tr>
@@ -493,6 +542,12 @@ async function paintCabang() {
                 <td>${c.ocs_area
                   ? `<span class="badge badge--ready">OCS · ${esc(c.ocs_area)}</span>`
                   : '<span class="badge">Manual</span>'}</td>
+                <td>
+                  <input class="input" style="width:7rem;text-transform:uppercase"
+                         value="${esc(c.group_code || '')}" placeholder="—"
+                         data-cab-grup="${esc(c.code)}"
+                         title="Rumpun dipakai tombol ceklis massal untuk menyasar beberapa cabang sekaligus. Kosongkan bila cabang ini berdiri sendiri.">
+                </td>
                 <td>
                   <label class="switch">
                     <input type="checkbox" ${c.is_active ? 'checked' : ''} data-cab-aktif="${esc(c.code)}">
@@ -518,6 +573,10 @@ async function paintCabang() {
           <label class="field__label" for="cNama">Nama</label>
           <input class="input" id="cNama" placeholder="misal PT Inovasi Eka Gemilang - Bitung">
         </div>
+        <div class="field">
+          <label class="field__label" for="cGrup">Rumpun</label>
+          <input class="input" id="cGrup" placeholder="misal OXAR" style="width:8rem;text-transform:uppercase">
+        </div>
         <div class="field" style="flex:1 1 12rem">
           <label class="field__label" for="cNote">Catatan</label>
           <input class="input" id="cNote" placeholder="opsional">
@@ -532,6 +591,30 @@ async function paintCabang() {
       await api('/api/atp/branches', { method: 'PUT', body: JSON.stringify({ code: kode, active: el.checked }) });
       toast(`Cabang ${kode} ${el.checked ? 'ditampilkan' : 'disembunyikan'}.`, 'success');
       ATP.data = await api(`/api/atp/dashboard?shop=${encodeURIComponent(ATP.brandFilter)}`);
+    };
+  });
+
+  /*
+   * Rumpun disimpan saat kolom ditinggalkan, bukan pada tiap ketikan — nilai
+   * setengah jadi seperti "OX" tidak perlu ikut tersimpan.
+   */
+  $$('[data-cab-grup]').forEach((el) => {
+    const semula = el.value;
+    el.onchange = async () => {
+      const kode = el.dataset.cabGrup;
+      const baru = el.value.trim().toUpperCase();
+      if (baru === semula.trim().toUpperCase()) return;
+      try {
+        await api('/api/atp/branches', {
+          method: 'PUT',
+          body: JSON.stringify({ code: kode, groupCode: baru || null }),
+        });
+        toast(baru ? `Cabang ${kode} masuk rumpun ${baru}.` : `Cabang ${kode} dikeluarkan dari rumpun.`, 'success');
+        paintCabang();
+      } catch (err) {
+        el.value = semula;
+        toast(err.message, 'error');
+      }
     };
   });
 
@@ -554,7 +637,12 @@ async function paintCabang() {
     try {
       await api('/api/atp/branches', {
         method: 'POST',
-        body: JSON.stringify({ code, name: name || code, note: $('#cNote').value.trim() || null }),
+        body: JSON.stringify({
+          code,
+          name: name || code,
+          groupCode: $('#cGrup').value.trim() || null,
+          note: $('#cNote').value.trim() || null,
+        }),
       });
       toast(`Cabang ${code} ditambahkan.`, 'success');
       paintCabang();

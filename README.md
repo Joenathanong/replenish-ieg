@@ -490,6 +490,35 @@ Master ATP ditarik paling sering **setengah jam sekali**, karena sekali tarik
 memakan sekitar satu menit dan datanya tidak berubah secepat stok. Pengecualiannya
 saat rekaman harian hendak diambil: di situ master dipaksa segar lebih dulu.
 
+### Rumpun cabang
+
+Cabang dikelompokkan lewat kolom `group_code`: **IEG** untuk Pusat, **OXAR** untuk
+Medan, Makassar, Yogyakarta, dan Surabaya. Rumpun inilah yang dipakai tombol ceklis
+massal supaya keempat cabang OXAR bisa disasar sekali klik.
+
+Pengelompokannya dibaca dari database, bukan ditulis mati di antarmuka, jadi cabang
+baru cukup diberi rumpun yang sama di halaman Cabang untuk langsung ikut terpilih.
+Nilai awalnya diisi sekali dan hanya pada baris yang masih kosong, sehingga
+pemindahan rumpun yang dilakukan orang tidak tertimpa setiap kali aplikasi dijalankan.
+
+### Ceklis massal
+
+Ragam barang per cabang tidak tersedia di OCS — `IsActive` nilainya identik di
+kelima area untuk 2.431 dari 2.534 SKU, dan 102 dari 103 sisanya berpola sama: aktif
+hanya di Pusat. Jadi ceklis per cabang harus dijaga lewat override, dan itu mustahil
+dilakukan satu per satu untuk 2.525 SKU kali lima cabang.
+
+Empat aksi tersedia di Master Data, semuanya mengikuti penyaring SKU yang sedang
+aktif: **Samakan dengan** cabang acuan, **Ikut Aktif OCS**, **Ceklis Semua**, dan
+**Hapus Semua Ceklis**. Tujuannya bisa satu rumpun sekaligus, satu cabang saja, atau
+semua cabang selain acuan.
+
+Penyaring cabang dan status sengaja tidak ikut menentukan lingkup, karena keduanya
+memilih baris berdasarkan keadaan yang justru sedang diubah.
+
+Menyalin menghasilkan **potret, bukan tautan**. Kalau cabang acuan berubah kemudian,
+tujuan tidak ikut sampai tombolnya ditekan lagi.
+
 ### Cabang
 
 Kelima cabang OCS (Pusat, Surabaya, Medan, Makassar, Yogyakarta) terdaftar otomatis

@@ -479,6 +479,18 @@ export async function ensureSchema() {
   await ensureColumn('sync_log', 'trigger_source', 'VARCHAR(20) NULL');
 
   /*
+   * Pengelompokan cabang, supaya ceklis massal bisa menyasar satu rumpun
+   * sekaligus. Diisi sekali saja: Pusat adalah IEG, sisanya OXAR. Hanya baris
+   * yang masih kosong yang disentuh, jadi pengelompokan yang sudah diubah
+   * orang tidak tertimpa setiap kali aplikasi dijalankan.
+   */
+  await ensureColumn('atp_branch', 'group_code', 'VARCHAR(40) NULL');
+  await run(
+    "UPDATE atp_branch SET group_code = CASE WHEN code = 'Pusat' THEN 'IEG' ELSE 'OXAR' END " +
+    "WHERE group_code IS NULL OR group_code = ''",
+  );
+
+  /*
    * Sidik jari isi satu hari, dan berapa kali berturut-turut ia tidak berubah.
    * Dipakai untuk berhenti menarik ulang hari yang angkanya sudah mengendap.
    */

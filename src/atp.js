@@ -45,10 +45,16 @@ export async function syncBranches() {
   // Pusat ditaruh paling depan; sisanya menurut abjad.
   const urut = (a) => (a === 'Pusat' ? 0 : 10);
 
-  const rows = areas.map((a) => [a, a, a, 1, urut(a), null, now]);
+  /*
+   * Rumpun hanya diisi saat baris baru dibuat, tidak ikut diperbarui, supaya
+   * pemindahan rumpun yang dilakukan orang tidak tertimpa tiap sinkronisasi.
+   */
+  const rumpun = (a) => (a === 'Pusat' ? 'IEG' : 'OXAR');
+
+  const rows = areas.map((a) => [a, a, a, rumpun(a), 1, urut(a), null, now]);
   if (rows.length) {
     await run(
-      `INSERT INTO atp_branch (code, name, ocs_area, is_active, sort_order, note, created_at)
+      `INSERT INTO atp_branch (code, name, ocs_area, group_code, is_active, sort_order, note, created_at)
        VALUES ?
        ON DUPLICATE KEY UPDATE ocs_area = VALUES(ocs_area)`,
       [rows],
@@ -59,25 +65,34 @@ export async function syncBranches() {
 
 export async function listBranches() {
   return all(
-    `SELECT code, name, ocs_area, is_active, sort_order, note, created_at
+    `SELECT code, name, ocs_area, group_code, is_active, sort_order, note, created_at
        FROM atp_branch ORDER BY sort_order, name`,
   );
 }
 
-export async function addBranch({ code, name, ocsArea = null, note = null, sortOrder = 100 }) {
+export async function addBranch({ code, name, ocsArea = null, note = null, sortOrder = 100, groupCode = null }) {
   const kode = String(code || '').trim().slice(0, 40);
   if (!kode) throw new Error('Kode cabang wajib diisi');
 
   await run(
-    `INSERT INTO atp_branch (code, name, ocs_area, is_active, sort_order, note, created_at)
-     VALUES (?, ?, ?, 1, ?, ?, ?)
+    `INSERT INTO atp_branch (code, name, ocs_area, group_code, is_active, sort_order, note, created_at)
+     VALUES (?, ?, ?, ?, 1, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
-       name = VALUES(name), ocs_area = VALUES(ocs_area),
+       name = VALUES(name), ocs_area = VALUES(ocs_area), group_code = VALUES(group_code),
        sort_order = VALUES(sort_order), note = VALUES(note)`,
     [kode, String(name || kode).slice(0, 120), ocsArea ? String(ocsArea).slice(0, 60) : null,
+      groupCode ? String(groupCode).trim().toUpperCase().slice(0, 40) : null,
       int(sortOrder) || 100, note ? String(note).slice(0, 200) : null, new Date().toISOString()],
   );
   return { code: kode };
+}
+
+/** Pindahkan satu cabang ke rumpun lain, atau keluarkan dari rumpun mana pun. */
+export async function setBranchGroup(code, groupCode) {
+  const rumpun = groupCode ? String(groupCode).trim().toUpperCase().slice(0, 40) : null;
+  const res = await run('UPDATE atp_branch SET group_code = ? WHERE code = ?', [rumpun, code]);
+  if (!res.affectedRows) throw new Error('Cabang tidak ditemukan');
+  return { code, groupCode: rumpun };
 }
 
 export async function setBranchActive(code, aktif) {

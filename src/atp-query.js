@@ -132,7 +132,7 @@ export async function getAtpMaster({
   branch = 'ALL', status = 'ALL', limit = 300,
 } = {}) {
   const cfg = await getAtpConfig();
-  const cabang = await all('SELECT code, name FROM atp_branch WHERE is_active = 1 ORDER BY sort_order, name');
+  const cabang = await all('SELECT code, name, group_code FROM atp_branch WHERE is_active = 1 ORDER BY sort_order, name');
 
   const { where, params } = saringSku({ search, shop, category });
 

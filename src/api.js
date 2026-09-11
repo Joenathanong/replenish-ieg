@@ -55,6 +55,7 @@ import {
   listBranches,
   addBranch,
   setBranchActive,
+  setBranchGroup,
   deleteBranch,
 } from './atp.js';
 
@@ -596,7 +597,10 @@ export async function handleApi(req, res, url) {
 
   if (pathname === '/api/atp/branches' && method === 'PUT') {
     const body = await readBody(req);
-    await setBranchActive(String(body.code || ''), !!body.active);
+    const kode = String(body.code || '');
+    // Dua hal berbeda lewat satu rute: status aktif, atau pemindahan rumpun.
+    if (Object.hasOwn(body, 'groupCode')) await setBranchGroup(kode, body.groupCode);
+    if (Object.hasOwn(body, 'active')) await setBranchActive(kode, !!body.active);
     return sendJson(res, 200, { ok: true, branches: await listBranches() });
   }
 
