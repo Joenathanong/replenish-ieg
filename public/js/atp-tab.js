@@ -72,23 +72,30 @@ function paintAtp() {
         dihitung per cabang dari stok OCS.
       </p>
 
+      <div class="atp-dasar">
+        <span class="atp-dasar__judul">${icon('settings')} Dasar perhitungan</span>
+        <div class="field">
+          <label class="field__label" for="atpKolom">Kolom stok</label>
+          <select class="select" id="atpKolom" style="min-width:14rem">
+            ${Object.entries(cfg.pilihanKolom || {}).map(([k, label]) =>
+              `<option value="${esc(k)}" ${cfg.stockField === k ? 'selected' : ''}>${esc(label)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label class="field__label" for="atpAmbang">Tersedia bila lebih dari</label>
+          <input class="input input--num" id="atpAmbang" type="number" min="0" max="100000"
+                 style="width:6rem" value="${fmt(cfg.threshold || 0)}">
+        </div>
+        <span class="atp-dasar__ket">
+          Setiap angka di halaman ini dihitung dari kolom tersebut. Mengubahnya menghitung
+          ulang saat itu juga, tetapi rekaman harian yang lama tidak ditulis ulang.
+        </span>
+      </div>
+
       <section class="panel">
         <div class="toolbar">
           <div class="segmented">${tabs}</div>
           <div class="toolbar__spacer"></div>
-          <div class="field">
-            <label class="field__label" for="atpKolom">Dasar stok</label>
-            <select class="select" id="atpKolom" title="Kolom stok yang dipakai menghitung ATP">
-              ${Object.entries(cfg.pilihanKolom || {}).map(([k, label]) =>
-                `<option value="${esc(k)}" ${cfg.stockField === k ? 'selected' : ''}>${esc(label)}</option>`).join('')}
-            </select>
-          </div>
-          <div class="field">
-            <label class="field__label" for="atpAmbang">Ambang &gt;</label>
-            <input class="input input--num" id="atpAmbang" type="number" min="0" max="100000"
-                   style="width:5.5rem" value="${fmt(cfg.threshold || 0)}"
-                   title="Stok di atas angka ini dihitung tersedia">
-          </div>
           <span class="panel__hint">
             ${d.terakhirDitarik ? `ditarik ${fmtWaktu(d.terakhirDitarik)}` : ''}
           </span>

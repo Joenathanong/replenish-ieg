@@ -464,6 +464,51 @@ body {
 }
 .toolbar__spacer { flex: 1 1 auto; }
 
+/*
+ * Sakelar bersegmen untuk sub-menu.
+ *
+ * Kelas ini sudah dipakai di markup ATP sejak awal tetapi tidak pernah ada
+ * gayanya, sehingga tabnya tampil sebagai tombol telanjang bawaan peramban dan
+ * toolbar-nya terbaca berdesakan.
+ */
+.segmented {
+  display: inline-flex; gap: 2px; padding: 3px;
+  background: var(--neutral-bg); border: 1px solid var(--border);
+  border-radius: var(--pill);
+}
+.segmented button {
+  font: inherit; font-weight: 600; font-size: .8125rem;
+  padding: .4rem .9rem; border: none; border-radius: var(--pill);
+  background: transparent; color: var(--text-muted); cursor: pointer;
+  white-space: nowrap; transition: background .15s ease, color .15s ease;
+}
+.segmented button:hover { color: var(--text); background: var(--surface); }
+.segmented button.is-active {
+  background: var(--surface); color: var(--brand);
+  box-shadow: var(--shadow-sm);
+}
+
+/*
+ * Baris kendali ATP: dasar stok dan ambangnya.
+ *
+ * Sengaja berdiri sendiri, bukan diselipkan ke toolbar bersama tab dan tombol
+ * tarik. Di toolbar ia hilang di antara elemen lain begitu layarnya menyempit,
+ * padahal justru inilah yang menentukan arti setiap angka di halaman ini.
+ */
+.atp-dasar {
+  display: flex; align-items: flex-end; gap: .85rem; flex-wrap: wrap;
+  padding: .85rem 1.25rem;
+  background: var(--brand-soft);
+  border: 1px solid var(--info-line);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+.atp-dasar__judul {
+  font-size: .8125rem; font-weight: 700; color: var(--info);
+  display: flex; align-items: center; gap: .4rem; margin-right: .35rem;
+}
+.atp-dasar__ket { font-size: .75rem; color: var(--text-muted); flex: 1 1 14rem; }
+
 .field { display: inline-flex; flex-direction: column; gap: 0.3rem; }
 .field__label {
   font-size: 0.7rem; color: var(--text-muted); font-weight: 700;
