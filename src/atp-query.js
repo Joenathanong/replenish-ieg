@@ -286,11 +286,17 @@ export async function setOverride(sku, branch, nilai) {
 }
 
 /** Riwayat rekaman harian, untuk grafik dan tabel tren. */
-export async function getAtpHistory({ days = 60, branch = 'ALL', shop = 'ALL' } = {}) {
+export async function getAtpHistory({ days = 60, branch = 'ALL', shop = 'ALL', category = 'ALL' } = {}) {
   const where = [];
   const params = [];
   if (branch && branch !== 'ALL') { where.push('branch_code = ?'); params.push(branch); }
   if (shop && shop !== 'ALL') { where.push('shop_code = ?'); params.push(shop); }
+  /*
+   * Rekaman disimpan per cabang x brand x kategori sejak awal, jadi pemecahan
+   * tunggal/bundle berlaku surut untuk seluruh riwayat yang sudah terkumpul —
+   * tidak perlu menarik ulang apa pun.
+   */
+  if (category && category !== 'ALL') { where.push('category = ?'); params.push(category); }
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
   const rows = await all(

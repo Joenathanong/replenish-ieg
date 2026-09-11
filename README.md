@@ -479,6 +479,13 @@ putaran, bukan lewat penjadwal terpisah — jadi kalau worker sempat mati melewa
 jam 7, rekamannya tetap terambil begitu worker hidup lagi. Menyimpan tanggal yang
 sama dua kali menimpa baris lama, tidak menggandakannya.
 
+Rekaman disimpan per cabang x brand x kategori sejak awal, jadi halaman Riwayat
+bisa dipecah jadi **tunggal + bundle**, **SKU tunggal saja**, atau **bundle saja**
+tanpa menarik ulang apa pun — pemecahannya berlaku surut ke seluruh riwayat yang
+sudah terkumpul. Ini penting karena bundle jauh lebih banyak daripada SKU tunggal
+(1.085 lawan 373 di kebanyakan cabang) dan stoknya lebih sering tipis, sehingga
+angka gabungan tidak sebanding dengan laporan yang hanya menghitung SKU tunggal.
+
 Master ATP ditarik paling sering **setengah jam sekali**, karena sekali tarik
 memakan sekitar satu menit dan datanya tidak berubah secepat stok. Pengecualiannya
 saat rekaman harian hendak diambil: di situ master dipaksa segar lebih dulu.
@@ -510,7 +517,7 @@ ketika ia diambil, supaya tren tidak berubah arti secara diam-diam.
 | `GET /api/atp/master` | master data per SKU x cabang (filter `search`, `shop`, `category`, `branch`, `status`) |
 | `GET /api/atp/bundle/:sku` | komponen satu bundle beserta stoknya per cabang |
 | `PUT /api/atp/override` | ubah centang aktif manual satu SKU di satu cabang |
-| `GET /api/atp/history` | riwayat rekaman harian |
+| `GET /api/atp/history` | riwayat rekaman harian (filter `branch`, `shop`, `category`) |
 | `GET/POST/PUT/DELETE /api/atp/branches` | kelola cabang |
 | `POST /api/atp/sync` | tarik master ATP sekarang |
 | `POST /api/atp/snapshot` | simpan rekaman untuk hari ini |

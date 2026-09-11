@@ -430,14 +430,30 @@ async function paintCabang() {
 async function paintRiwayat() {
   const host = $('#atpBody');
   host.innerHTML = `<div class="panel__body"><p class="muted">Memuat…</p></div>`;
+  const jenis = ATP.jenisRiwayat || 'ALL';
+  const qs = new URLSearchParams({ days: '60' });
+  if (jenis !== 'ALL') qs.set('category', jenis);
+
   try {
-    ATP.riwayat = await api('/api/atp/history?days=60');
+    ATP.riwayat = await api(`/api/atp/history?${qs}`);
   } catch (err) {
     host.innerHTML = '';
     return toast(err.message, 'error');
   }
 
   const jam = ATP.data?.config?.snapshotHour ?? 7;
+
+  // Kosong karena penyaring jenis adalah keadaan lain daripada belum pernah merekam.
+  if (!ATP.riwayat.length && jenis !== 'ALL') {
+    host.innerHTML = `
+      <div class="empty">
+        <div class="empty__title">Tidak ada rekaman untuk ${jenis === 'Bundle' ? 'bundle' : 'SKU tunggal'}</div>
+        <div>Rekaman harian yang tersimpan tidak memuat jenis ini.</div>
+        <button class="btn btn--emphasized" style="margin-top:1rem" id="rSemua">Tampilkan Tunggal + Bundle</button>
+      </div>`;
+    $('#rSemua').onclick = () => { ATP.jenisRiwayat = 'ALL'; paintRiwayat(); };
+    return;
+  }
 
   if (!ATP.riwayat.length) {
     host.innerHTML = `
@@ -462,8 +478,19 @@ async function paintRiwayat() {
   host.innerHTML = `
     <div class="panel__head">
       <h2 class="panel__title">Rekaman Harian</h2>
-      <p class="panel__hint" style="margin:0">${fmt(tanggal.length)} hari tersimpan · diambil tiap jam ${fmt(jam)}:00 WIB</p>
+      <p class="panel__hint" style="margin:0">
+        ${fmt(tanggal.length)} hari tersimpan · diambil tiap jam ${fmt(jam)}:00 WIB
+        ${jenis === 'ALL' ? '' : `· hanya ${jenis === 'Bundle' ? 'bundle' : 'SKU tunggal'}`}
+      </p>
       <div class="toolbar__spacer"></div>
+      <div class="field">
+        <label class="field__label" for="rJenis">Jenis</label>
+        <select class="select" id="rJenis">
+          <option value="ALL" ${jenis === 'ALL' ? 'selected' : ''}>Tunggal + bundle</option>
+          <option value="Sku" ${jenis === 'Sku' ? 'selected' : ''}>SKU tunggal saja</option>
+          <option value="Bundle" ${jenis === 'Bundle' ? 'selected' : ''}>Bundle saja</option>
+        </select>
+      </div>
       <button class="btn" id="rAmbil2">${icon('refresh')} Ambil Rekaman Hari Ini</button>
     </div>
     <div class="table-wrap">
@@ -488,6 +515,8 @@ async function paintRiwayat() {
         </tbody>
       </table>
     </div>`;
+
+  $('#rJenis').onchange = (e) => { ATP.jenisRiwayat = e.target.value; paintRiwayat(); };
 
   $('#rAmbil2').onclick = async (e) => {
     e.currentTarget.disabled = true;

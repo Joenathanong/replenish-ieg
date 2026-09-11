@@ -17,6 +17,7 @@ const ATP = {
   cabang: [],
   riwayat: [],
   brandFilter: 'ALL',
+  jenisRiwayat: 'ALL',   // ALL | Sku | Bundle — pemecahan rekaman harian
   filterMaster: { search: '', shop: 'ALL', category: 'ALL', branch: 'ALL', status: 'ALL' },
 };
 

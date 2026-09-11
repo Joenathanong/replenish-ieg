@@ -563,6 +563,7 @@ export async function handleApi(req, res, url) {
     return sendJson(res, 200, await getAtpHistory({
       days: Number(q.get('days')) || 60,
       branch: q.get('branch'), shop: q.get('shop'),
+      category: q.get('category'),
     }));
   }
 
