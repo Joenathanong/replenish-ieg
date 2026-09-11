@@ -1,52 +1,86 @@
 /* =========================================================================
-   OCS Replenish Monitor — tema mengikuti SAP Horizon, penerus Fiori 3.
+   OCS Replenish Monitor — Morning & Evening.
 
-   Horizon adalah bahasa desain SAP yang sekarang: warna lebih hidup, sudut
-   lebih membulat, bayangan berlapis menggantikan garis tipis, dan permukaan
-   diberi rona sesuai maknanya alih-alih sekadar teks berwarna.
+   Paletnya diambil dari aplikasi OCS sendiri, yang ternyata memakai Fluent 2:
+   biru merek #0f6cbd beserta turunannya, netral #242424..#fafafa. Warna itu
+   dipadukan dengan tata ruang SAP Horizon — sudut membulat, bayangan berlapis,
+   permukaan berona makna.
 
-   Nama kelas sengaja dipertahankan sama persis seperti versi sebelumnya,
-   sehingga pergantian tema ini tidak menyentuh logika di app.js.
+   "Perpaduan Evening & Morning" dijalankan begini: kanvas isi memakai Morning
+   yang terang, sementara kepala aplikasi dan tab memakai Evening yang gelap.
+   Batang gelap di atas membingkai isi dan membuat data jadi bagian paling
+   terang di layar. Seluruh tema bisa dibalik ke Evening penuh lewat tombol di
+   kepala, dan mengikuti setelan sistem bila belum pernah dipilih.
+
+   Semua warna lewat token. Nama kelas tidak berubah, jadi pergantian tema ini
+   tidak menyentuh logika di app.js.
    ========================================================================= */
 
 :root {
-  /* ---- Warna merek ---- */
-  --brand: #0070f2;
-  --brand-hover: #0064d9;
-  --brand-soft: #ebf5ff;
+  color-scheme: light;
 
-  /* ---- Permukaan ---- */
-  --bg: #eef1f6;              /* halaman: abu berona biru, bukan abu mati */
+  /* ---- Merek: diambil dari CSS aplikasi OCS ---- */
+  --brand: #0f6cbd;
+  --brand-hover: #115fa3;
+  --brand-press: #0f548c;
+  --brand-soft: #ebf3fc;
+  --brand-tint: #d0e5fb;
+  --brand-deep: #0a2e4a;
+
+  /* ---- Permukaan (Morning) ---- */
+  --bg: #eff2f7;
   --surface: #ffffff;
   --surface-alt: #f7f9fc;
-  --border: #e1e7f0;
-  --border-strong: #c3cddb;
+  --surface-sunk: #f0f3f8;
+  --border: #e2e8f0;
+  --border-strong: #c5d0de;
 
   /* ---- Teks ---- */
-  --text: #1a2733;
-  --text-muted: #5b738b;
-  --text-subtle: #8fa3b8;
+  --text: #1b2635;
+  --text-muted: #566b83;
+  --text-subtle: #78899f;
+  --on-brand: #ffffff;
 
-  /* ---- Warna semantik: teks, latar, garis ---- */
-  --negative: #d20a0a;
-  --negative-bg: #ffecec;
-  --negative-line: #ffc9c9;
+  /* ---- Warna semantik ---- */
+  --negative: #bc2f33;
+  --negative-bg: #fdf3f3;
+  --negative-line: #f2cbcd;
 
-  --critical: #d95400;
-  --critical-bg: #fff4e8;
-  --critical-line: #ffd9b0;
+  --critical: #bc4b09;
+  --critical-bg: #fff5ec;
+  --critical-line: #fad6b6;
 
-  --positive: #1f7a3d;
-  --positive-bg: #e9f8ee;
-  --positive-line: #b3e6c4;
+  --positive: #107c10;
+  --positive-bg: #f1faf1;
+  --positive-line: #bfe3bf;
 
-  --info: #0070f2;
-  --info-bg: #ebf5ff;
-  --info-line: #bcdcff;
+  --info: #0f6cbd;
+  --info-bg: #ebf3fc;
+  --info-line: #bcd9f7;
 
-  --neutral: #5b738b;
-  --neutral-bg: #eef1f6;
-  --neutral-line: #dbe3ed;
+  --neutral: #566b83;
+  --neutral-bg: #eff2f7;
+  --neutral-line: #dde4ee;
+
+  /*
+   * Pita kesehatan ATP.
+   *
+   * Empat langkah ini lolos pemeriksa palet pada mode terang: pemisahan buta
+   * warna dan penglihatan normal sama-sama di atas ambang. Amber-nya di bawah
+   * 3:1 terhadap latar, dan itu ditebus dengan angka serta label yang selalu
+   * ikut tercetak — warna tidak pernah jadi satu-satunya penanda.
+   *
+   * Isian dan teks dipisah karena syaratnya berbeda: isian butuh terlihat,
+   * teks butuh terbaca.
+   */
+  --atp-good: #2a8a2a;      --atp-good-text: #1c6b1c;
+  --atp-warning: #d9a400;   --atp-warning-text: #8a6300;
+  --atp-serious: #d2401f;   --atp-serious-text: #b83a19;
+  --atp-critical: #8f1d21;  --atp-critical-text: #8f1d21;
+
+  /* Satu hue biru OCS, terang ke gelap, untuk peta panas. */
+  --seq-1: #ebf3fc; --seq-2: #d0e5fb; --seq-3: #96c7fa;
+  --seq-4: #5aa0e8; --seq-5: #2b7cd3; --seq-6: #0f548c;
 
   /* ---- Bentuk & kedalaman ---- */
   --radius-sm: 6px;
@@ -54,11 +88,21 @@
   --radius-lg: 16px;
   --pill: 999px;
 
-  --shadow-sm: 0 1px 2px rgba(20, 35, 55, .06), 0 1px 3px rgba(20, 35, 55, .05);
-  --shadow: 0 2px 6px rgba(20, 35, 55, .07), 0 6px 16px rgba(20, 35, 55, .06);
-  --shadow-lg: 0 10px 34px rgba(20, 35, 55, .16);
+  --shadow-sm: 0 1px 2px rgba(16, 30, 50, .06), 0 1px 3px rgba(16, 30, 50, .05);
+  --shadow: 0 2px 6px rgba(16, 30, 50, .07), 0 6px 16px rgba(16, 30, 50, .06);
+  --shadow-lg: 0 10px 34px rgba(16, 30, 50, .16);
 
-  --shell: linear-gradient(115deg, #0a2c5c 0%, #124a91 58%, #0f63bd 100%);
+  /* Kepala aplikasi: Evening, di kedua mode. */
+  --shell: linear-gradient(115deg, #0a2e4a 0%, #0f548c 58%, #115fa3 100%);
+  --shell-text: #eaf2fb;
+  --shell-muted: #9dbcdd;
+  --shell-line: rgba(255, 255, 255, .14);
+
+  /* Panggung gelap untuk mode slide. */
+  --stage: #0d1620;
+  --stage-alt: #0a121b;
+  --stage-text: #eef4fb;
+  --stage-muted: #8ba3c0;
 
   --font: "72", "72full", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --shellHeight: 3.25rem;
@@ -70,6 +114,138 @@
   --sapBrandColor: var(--brand);
   --sapContent_LabelColor: var(--text-muted);
   --sapTextColor: var(--text);
+}
+
+/*
+ * Evening.
+ *
+ * Bukan pembalikan otomatis: tiap token diturunkan ulang terhadap latar gelap.
+ * Biru merek dinaikkan terangnya, karena #0f6cbd di atas permukaan gelap tidak
+ * lagi cukup kontras.
+ *
+ * Penyimpangan yang disadari: pada mode ini pasangan "serius" dan "kritis"
+ * tidak mencapai ambang pemisahan penglihatan normal. Oranye dan merah yang
+ * sama-sama harus melampaui 3:1 di atas latar gelap memang tidak bisa
+ * direnggangkan sejauh itu. Keduanya diperlakukan sebagai dua langkah terang
+ * dari satu hue, dan selalu disertai label serta angkanya.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --brand: #5aa7f0;
+  --brand-hover: #7cbcf5;
+  --brand-press: #96c7fa;
+  --brand-soft: #16304a;
+  --brand-tint: #1d3f5f;
+  --brand-deep: #061c2e;
+
+  --bg: #0f151e;
+  --surface: #19212c;
+  --surface-alt: #202a38;
+  --surface-sunk: #141c26;
+  --border: #2b3644;
+  --border-strong: #3d4b5d;
+
+  --text: #e8edf4;
+  --text-muted: #a2b1c4;
+  --text-subtle: #78889c;
+  --on-brand: #08192a;
+
+  --negative: #ef7b80;
+  --negative-bg: #2a1719;
+  --negative-line: #5a2b2e;
+
+  --critical: #f0a35e;
+  --critical-bg: #2a1f14;
+  --critical-line: #5c3d1f;
+
+  --positive: #5cc65c;
+  --positive-bg: #14251a;
+  --positive-line: #2f5233;
+
+  --info: #5aa7f0;
+  --info-bg: #152638;
+  --info-line: #2c4a6b;
+
+  --neutral: #8698ad;
+  --neutral-bg: #1a2330;
+  --neutral-line: #2b3644;
+
+  --atp-good: #4fc25e;      --atp-good-text: #6ed07a;
+  --atp-warning: #f2ce3f;   --atp-warning-text: #f2ce3f;
+  --atp-serious: #f0894a;   --atp-serious-text: #f5a271;
+  --atp-critical: #f2585f;  --atp-critical-text: #f58087;
+
+  --seq-1: #17293c; --seq-2: #1d4570; --seq-3: #275e99;
+  --seq-4: #3a80c4; --seq-5: #5aa7f0; --seq-6: #8cc6f7;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .34);
+  --shadow: 0 2px 8px rgba(0, 0, 0, .4), 0 8px 20px rgba(0, 0, 0, .3);
+  --shadow-lg: 0 12px 38px rgba(0, 0, 0, .55);
+
+  --stage: #0a111a;
+  --stage-alt: #070d14;
+}
+
+/* Belum pernah memilih: ikut setelan sistem. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --brand: #5aa7f0;
+    --brand-hover: #7cbcf5;
+    --brand-press: #96c7fa;
+    --brand-soft: #16304a;
+    --brand-tint: #1d3f5f;
+    --brand-deep: #061c2e;
+
+    --bg: #0f151e;
+    --surface: #19212c;
+    --surface-alt: #202a38;
+    --surface-sunk: #141c26;
+    --border: #2b3644;
+    --border-strong: #3d4b5d;
+
+    --text: #e8edf4;
+    --text-muted: #a2b1c4;
+    --text-subtle: #78889c;
+    --on-brand: #08192a;
+
+    --negative: #ef7b80;
+    --negative-bg: #2a1719;
+    --negative-line: #5a2b2e;
+
+    --critical: #f0a35e;
+    --critical-bg: #2a1f14;
+    --critical-line: #5c3d1f;
+
+    --positive: #5cc65c;
+    --positive-bg: #14251a;
+    --positive-line: #2f5233;
+
+    --info: #5aa7f0;
+    --info-bg: #152638;
+    --info-line: #2c4a6b;
+
+    --neutral: #8698ad;
+    --neutral-bg: #1a2330;
+    --neutral-line: #2b3644;
+
+    --atp-good: #4fc25e;      --atp-good-text: #6ed07a;
+    --atp-warning: #f2ce3f;   --atp-warning-text: #f2ce3f;
+    --atp-serious: #f0894a;   --atp-serious-text: #f5a271;
+    --atp-critical: #f2585f;  --atp-critical-text: #f58087;
+
+    --seq-1: #17293c; --seq-2: #1d4570; --seq-3: #275e99;
+    --seq-4: #3a80c4; --seq-5: #5aa7f0; --seq-6: #8cc6f7;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .34);
+    --shadow: 0 2px 8px rgba(0, 0, 0, .4), 0 8px 20px rgba(0, 0, 0, .3);
+    --shadow-lg: 0 12px 38px rgba(0, 0, 0, .55);
+
+    --stage: #0a111a;
+    --stage-alt: #070d14;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -259,19 +435,19 @@ body {
 }
 .tile__foot { font-size: 0.75rem; color: var(--text-muted); margin-top: auto; padding-top: .35rem; }
 
-.tile--negative { background: linear-gradient(180deg, var(--negative-bg) 0%, #fff 62%); border-color: var(--negative-line); }
+.tile--negative { background: linear-gradient(180deg, var(--negative-bg) 0%, var(--surface) 62%); border-color: var(--negative-line); }
 .tile--negative::before { background: var(--negative); }
 .tile--negative .tile__value { color: var(--negative); }
 
-.tile--critical { background: linear-gradient(180deg, var(--critical-bg) 0%, #fff 62%); border-color: var(--critical-line); }
+.tile--critical { background: linear-gradient(180deg, var(--critical-bg) 0%, var(--surface) 62%); border-color: var(--critical-line); }
 .tile--critical::before { background: var(--critical); }
 .tile--critical .tile__value { color: var(--critical); }
 
-.tile--positive { background: linear-gradient(180deg, var(--positive-bg) 0%, #fff 62%); border-color: var(--positive-line); }
+.tile--positive { background: linear-gradient(180deg, var(--positive-bg) 0%, var(--surface) 62%); border-color: var(--positive-line); }
 .tile--positive::before { background: var(--positive); }
 .tile--positive .tile__value { color: var(--positive); }
 
-.tile--informative { background: linear-gradient(180deg, var(--info-bg) 0%, #fff 62%); border-color: var(--info-line); }
+.tile--informative { background: linear-gradient(180deg, var(--info-bg) 0%, var(--surface) 62%); border-color: var(--info-line); }
 .tile--informative::before { background: var(--info); }
 .tile--informative .tile__value { color: var(--info); }
 
@@ -332,7 +508,7 @@ body {
 .btn:active { transform: scale(.98); }
 .btn:disabled { opacity: .5; cursor: default; background: var(--neutral-bg); color: var(--text-subtle); }
 .btn--emphasized {
-  background: var(--brand); border-color: var(--brand); color: #fff;
+  background: var(--brand); border-color: var(--brand); color: var(--on-brand);
   box-shadow: 0 1px 2px rgba(0, 112, 242, .3);
 }
 .btn--emphasized:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
@@ -347,14 +523,14 @@ body {
 .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
 .switch__track {
   width: 2.9rem; height: 1.5rem; border-radius: var(--pill);
-  background: #cdd7e3; border: none;
+  background: var(--border-strong); border: none;
   position: relative; transition: background .2s ease; flex: none;
   box-shadow: inset 0 1px 2px rgba(20, 35, 55, .12);
 }
 .switch__track::after {
   content: ""; position: absolute; top: 2px; left: 2px;
   width: 1.1rem; height: 1.1rem; border-radius: 50%;
-  background: #fff; box-shadow: 0 1px 3px rgba(20, 35, 55, .35);
+  background: var(--surface); box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
   transition: transform .2s cubic-bezier(.34, 1.4, .64, 1);
 }
 .switch input:checked + .switch__track { background: var(--positive); }
@@ -436,7 +612,7 @@ table.ftable tbody tr:last-child td { border-bottom: none; }
 table.ftable tbody td:first-child { box-shadow: inset 3px 0 0 transparent; }
 table.ftable tbody tr.row--minus td:first-child { box-shadow: inset 3px 0 0 var(--negative); }
 table.ftable tbody tr.row--minus { background: linear-gradient(90deg, var(--negative-bg) 0%, transparent 34%); }
-table.ftable tbody tr.row--minus:hover { background: linear-gradient(90deg, #ffdede 0%, var(--brand-soft) 34%); }
+table.ftable tbody tr.row--minus:hover { background: linear-gradient(90deg, var(--negative-bg) 0%, var(--brand-soft) 34%); }
 
 .obj-id { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
 .obj-id__title { font-weight: 700; color: var(--text); letter-spacing: -.005em; }
@@ -477,10 +653,10 @@ table.ftable tbody tr.row--minus:hover { background: linear-gradient(90deg, #ffd
   white-space: nowrap;
 }
 .badge--new { background: var(--info-bg); border-color: var(--info-line); color: var(--info); }
-.badge--override { background: #f3edff; border-color: #ddcbfa; color: #6b3fa0; }
+.badge--override { background: var(--brand-soft); border-color: var(--info-line); color: var(--info); }
 .badge--ready { background: var(--positive-bg); border-color: var(--positive-line); color: var(--positive); }
 .badge--blocked { background: var(--negative-bg); border-color: var(--negative-line); color: var(--negative); }
-.badge--inactive { background: #eceff3; color: var(--text-subtle); }
+.badge--inactive { background: var(--neutral-bg); color: var(--text-subtle); }
 
 .delta { font-size: 0.75rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .delta--down { color: var(--negative); }
@@ -546,13 +722,13 @@ table.ftable tbody tr.row--minus:hover { background: linear-gradient(90deg, #ffd
  */
 .slideshow {
   position: fixed; inset: 0; z-index: 300;
-  background: #0e1826;
-  color: #e6edf6;
+  background: var(--stage);
+  color: var(--stage-text);
   display: flex; flex-direction: column;
 }
 
 .slideshow__head {
-  background: linear-gradient(115deg, #0a2c5c 0%, #123f7d 100%);
+  background: var(--shell);
   color: #fff;
   padding: 0.9rem 1.75rem;
   display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;
@@ -616,7 +792,7 @@ table.stable .status--AMAN  { color: #6fe6ab; background: rgba(60, 210, 140, .15
 
 .slideshow__foot {
   padding: 0.7rem 1.75rem;
-  background: #0a121e;
+  background: var(--stage-alt);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07);
   display: flex; align-items: center; gap: 0.75rem;
   font-size: 0.85rem; color: #8ba3c0;
@@ -696,8 +872,8 @@ table.stable .status--AMAN  { color: #6fe6ab; background: rgba(60, 210, 140, .15
 .hero {
   display: flex; align-items: flex-end; gap: 2rem; flex-wrap: wrap;
   padding: 1.5rem 1.75rem;
-  background: linear-gradient(135deg, #0a2c5c 0%, #124a91 60%, #0f63bd 100%);
-  color: #fff;
+  background: var(--shell);
+  color: var(--shell-text);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   margin-bottom: 1.25rem;
@@ -735,10 +911,10 @@ table.stable .status--AMAN  { color: #6fe6ab; background: rgba(60, 210, 140, .15
 .is-warning  { background: var(--atp-warning); }
 .is-serious  { background: var(--atp-serious); }
 .is-critical { background: var(--atp-critical); }
-.teks-good     { color: var(--atp-good); }
-.teks-warning  { color: #9a6a00; }   /* dinaikkan kontrasnya untuk teks */
-.teks-serious  { color: #a6482a; }
-.teks-critical { color: var(--atp-critical); }
+.teks-good     { color: var(--atp-good-text); }
+.teks-warning  { color: var(--atp-warning-text); }
+.teks-serious  { color: var(--atp-serious-text); }
+.teks-critical { color: var(--atp-critical-text); }
 
 /* ---- Peta panas cabang x brand ---- */
 
@@ -789,7 +965,7 @@ table.heat td { padding: 0; }
 .cabang-sel--nonaktif { opacity: .4; }
 
 .ceklis { cursor: pointer; width: 1.05rem; height: 1.05rem; accent-color: var(--brand); }
-.ditimpa { box-shadow: 0 0 0 2px #6b3fa0; border-radius: 3px; }
+.ditimpa { box-shadow: 0 0 0 2px var(--brand); border-radius: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
   .rank__isi, .heat__sel { transition: none; }

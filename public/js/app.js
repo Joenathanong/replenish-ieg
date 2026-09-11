@@ -1224,6 +1224,53 @@ $('#btnSync').onclick = async (e) => {
   }
 };
 
+/*
+ * Pergantian Morning/Evening.
+ *
+ * Pilihan disimpan per peramban. Selama belum pernah dipilih, atribut sengaja
+ * dibiarkan kosong supaya CSS mengikuti setelan sistem — menyetelnya ke salah
+ * satu nilai justru mengunci tema dan mengabaikan preferensi pengguna.
+ *
+ * Penyimpanan dibungkus try/catch: pada jendela privat atau peramban yang
+ * memblokir penyimpanan situs, membacanya melempar galat, dan tema yang gagal
+ * diingat tidak boleh menjatuhkan seluruh halaman.
+ */
+const KUNCI_TEMA = 'ocs-tema';
+
+function temaSistemGelap() {
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+function temaBerlaku() {
+  const dipilih = document.documentElement.getAttribute('data-theme');
+  if (dipilih === 'dark' || dipilih === 'light') return dipilih;
+  return temaSistemGelap() ? 'dark' : 'light';
+}
+
+function pasangTema(nilai) {
+  if (nilai) document.documentElement.setAttribute('data-theme', nilai);
+  else document.documentElement.removeAttribute('data-theme');
+
+  const label = $('#temaLabel');
+  // Tombol menyebut tujuan, bukan keadaan sekarang.
+  if (label) label.textContent = temaBerlaku() === 'dark' ? 'Morning' : 'Evening';
+}
+
+try { pasangTema(localStorage.getItem(KUNCI_TEMA)); } catch { pasangTema(null); }
+
+$('#btnTema').onclick = () => {
+  const berikut = temaBerlaku() === 'dark' ? 'light' : 'dark';
+  pasangTema(berikut);
+  try { localStorage.setItem(KUNCI_TEMA, berikut); } catch { /* tidak bisa diingat, tak apa */ }
+};
+
+// Selama belum pernah memilih, ikut berubah bila setelan sistem berubah.
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (!document.documentElement.getAttribute('data-theme')) pasangTema(null);
+  });
+}
+
 $('#btnSlide').onclick = () => { location.hash = 'slide'; };
 
 applyHash();
