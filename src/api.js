@@ -45,6 +45,7 @@ import {
   getAtpMaster,
   getBundleDetail,
   setOverride,
+  setOverrideBulk,
   getAtpHistory,
 } from './atp-query.js';
 import {
@@ -556,6 +557,21 @@ export async function handleApi(req, res, url) {
     // null mengembalikan keputusan ke OCS.
     const nilai = body.override === null || body.override === undefined ? null : !!body.override;
     return sendJson(res, 200, await setOverride(sku, branch, nilai));
+  }
+
+  if (pathname === '/api/atp/override/bulk' && method === 'POST') {
+    const body = await readBody(req);
+    return sendJson(res, 200, await setOverrideBulk({
+      mode: String(body.mode || '').trim(),
+      targets: Array.isArray(body.targets) ? body.targets : [],
+      source: body.source ? String(body.source).trim() : null,
+      aktif: body.aktif === undefined ? null : !!body.aktif,
+      filter: {
+        search: body.search ?? null,
+        shop: body.shop ?? 'ALL',
+        category: body.category ?? 'ALL',
+      },
+    }));
   }
 
   if (pathname === '/api/atp/history' && method === 'GET') {

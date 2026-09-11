@@ -17,6 +17,8 @@ const ATP = {
   cabang: [],
   riwayat: [],
   brandFilter: 'ALL',
+  massalSumber: null,    // cabang acuan untuk tombol "Samakan dengan"
+  massalTujuan: 'OXAR',  // OXAR = semua cabang selain sumber
   jenisRiwayat: 'ALL',   // ALL | Sku | Bundle — pemecahan rekaman harian
   filterMaster: { search: '', shop: 'ALL', category: 'ALL', branch: 'ALL', status: 'ALL' },
 };

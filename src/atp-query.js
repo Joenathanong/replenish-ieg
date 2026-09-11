@@ -104,13 +104,14 @@ export async function getAtpDashboard({ shop = 'ALL' } = {}) {
  * Master data: satu baris per SKU, dengan kolom stok dan status aktif
  * untuk setiap cabang.
  */
-export async function getAtpMaster({
-  search = null, shop = 'ALL', category = 'ALL',
-  branch = 'ALL', status = 'ALL', limit = 300,
-} = {}) {
-  const cfg = await getAtpConfig();
-  const cabang = await all('SELECT code, name FROM atp_branch WHERE is_active = 1 ORDER BY sort_order, name');
-
+/**
+ * Penyaring yang memilih *himpunan SKU*-nya: pencarian, brand, jenis.
+ *
+ * Dipisah karena aksi massal harus mengubah persis apa yang sedang dilihat.
+ * Kalau penyusunnya disalin, cepat atau lambat keduanya akan berbeda diam-diam
+ * dan tombol massal mengenai baris yang tidak ada di layar.
+ */
+function saringSku({ search = null, shop = 'ALL', category = 'ALL' } = {}) {
   const where = [];
   const params = [];
 
@@ -123,6 +124,17 @@ export async function getAtpMaster({
   if (category && category !== 'ALL') {
     where.push(category === 'Bundle' ? 's.is_bundle = 1' : 's.is_bundle = 0');
   }
+  return { where, params };
+}
+
+export async function getAtpMaster({
+  search = null, shop = 'ALL', category = 'ALL',
+  branch = 'ALL', status = 'ALL', limit = 300,
+} = {}) {
+  const cfg = await getAtpConfig();
+  const cabang = await all('SELECT code, name FROM atp_branch WHERE is_active = 1 ORDER BY sort_order, name');
+
+  const { where, params } = saringSku({ search, shop, category });
 
   /*
    * Penyaringan status dan cabang memakai EXISTS, bukan JOIN, supaya satu SKU
@@ -283,6 +295,66 @@ export async function setOverride(sku, branch, nilai) {
   );
   if (!res.affectedRows) throw new Error('SKU tidak terdaftar di cabang tersebut');
   return { sku, branch, override: v === null ? null : !!v };
+}
+
+/**
+ * Ubah ceklis banyak baris sekaligus.
+ *
+ * Tiga cara, dan bedanya penting:
+ *
+ * - `ocs`    mengosongkan override, jadi barisnya kembali ikut OCS dan akan
+ *            berubah sendiri setiap penarikan.
+ * - `set`    memasang ceklis tetap, aktif atau non-aktif, tak peduli kata OCS.
+ * - `salin`  menyalin keadaan yang *berlaku* di satu cabang sumber ke cabang
+ *            tujuan. Hasilnya override tetap — sebuah potret, bukan tautan.
+ *            Kalau sumbernya berubah nanti, tujuan tidak ikut sampai tombolnya
+ *            ditekan lagi.
+ *
+ * Lingkupnya mengikuti penyaring SKU yang sedang aktif (pencarian, brand,
+ * jenis). Penyaring cabang dan status sengaja diabaikan: keduanya memilih baris
+ * berdasarkan keadaan yang justru sedang diubah, sehingga hasilnya bergantung
+ * pada urutan eksekusi.
+ */
+export async function setOverrideBulk({ mode, targets = [], source = null, aktif = null, filter = {} } = {}) {
+  const sah = await all('SELECT code FROM atp_branch');
+  const dikenal = new Set(sah.map((b) => b.code));
+
+  const tujuan = [...new Set(targets.map((t) => String(t).trim()).filter(Boolean))];
+  if (!tujuan.length) throw new Error('Pilih dulu cabang tujuannya');
+  const asing = tujuan.filter((t) => !dikenal.has(t));
+  if (asing.length) throw new Error(`Cabang tidak dikenal: ${asing.join(', ')}`);
+
+  const { where, params } = saringSku(filter);
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const subSku = `t.sku IN (SELECT sku FROM (SELECT s.sku FROM atp_sku s ${clause}) AS pilihan)`;
+  const posisi = tujuan.map(() => '?').join(',');
+
+  let sql;
+  let args;
+
+  if (mode === 'ocs') {
+    sql = `UPDATE atp_sku_branch t SET t.is_active_override = NULL
+            WHERE t.branch_code IN (${posisi}) AND ${subSku}`;
+    args = [...tujuan, ...params];
+  } else if (mode === 'set') {
+    sql = `UPDATE atp_sku_branch t SET t.is_active_override = ?
+            WHERE t.branch_code IN (${posisi}) AND ${subSku}`;
+    args = [aktif ? 1 : 0, ...tujuan, ...params];
+  } else if (mode === 'salin') {
+    if (!source || !dikenal.has(source)) throw new Error('Cabang sumber tidak dikenal');
+    if (tujuan.includes(source)) throw new Error('Cabang sumber tidak boleh jadi tujuan');
+    sql = `UPDATE atp_sku_branch t
+             JOIN atp_sku_branch asal
+               ON asal.sku = t.sku AND asal.branch_code = ?
+              SET t.is_active_override = COALESCE(asal.is_active_override, asal.is_active_ocs)
+            WHERE t.branch_code IN (${posisi}) AND ${subSku}`;
+    args = [source, ...tujuan, ...params];
+  } else {
+    throw new Error(`Mode tidak dikenal: ${mode}`);
+  }
+
+  const res = await run(sql, args);
+  return { mode, targets: tujuan, source, diubah: res.affectedRows || 0 };
 }
 
 /** Riwayat rekaman harian, untuk grafik dan tabel tren. */

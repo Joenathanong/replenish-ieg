@@ -72,6 +72,67 @@ function ringkasanCabang(m) {
     </div>`;
 }
 
+/**
+ * Aksi massal untuk ceklis.
+ *
+ * Lingkupnya mengikuti pencarian, brand, dan jenis yang sedang aktif — sama
+ * persis dengan yang tampil di tabel. Penyaring cabang dan status tidak ikut,
+ * karena keduanya memilih baris berdasarkan keadaan yang justru sedang diubah.
+ */
+function barAksiMassal(m) {
+  const cab = m.cabang || [];
+  if (cab.length < 2) return '';
+
+  const asal = ATP.massalSumber || (cab.some((c) => c.code === 'Pusat') ? 'Pusat' : cab[0].code);
+  const tujuan = ATP.massalTujuan || 'OXAR';
+  const lain = cab.filter((c) => c.code !== asal);
+
+  return `
+    <div class="toolbar" style="margin-bottom:1rem">
+      <div class="field">
+        <label class="field__label" for="bSumber">Sumber</label>
+        <select class="select" id="bSumber">
+          ${cab.map((c) => `<option value="${esc(c.code)}" ${asal === c.code ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="bTujuan">Terapkan ke</label>
+        <select class="select" id="bTujuan">
+          <option value="OXAR" ${tujuan === 'OXAR' ? 'selected' : ''}>Semua cabang selain ${esc(asal)} (${lain.length})</option>
+          ${lain.map((c) => `<option value="${esc(c.code)}" ${tujuan === c.code ? 'selected' : ''}>${esc(c.name)} saja</option>`).join('')}
+        </select>
+      </div>
+      <div class="toolbar__spacer"></div>
+      <button class="btn btn--emphasized" data-massal="salin">Samakan dengan ${esc(asal)}</button>
+      <button class="btn" data-massal="ocs">Ikut Aktif OCS</button>
+      <button class="btn" data-massal="aktif">Ceklis Semua</button>
+      <button class="btn btn--negative" data-massal="nonaktif">Hapus Semua Ceklis</button>
+    </div>`;
+}
+
+/** Dialog penegasan sebelum mengubah ribuan baris sekaligus. */
+function konfirmMassal({ judul, rincian, lanjut }) {
+  const host = $('#dialogHost');
+  const tutup = () => { host.innerHTML = ''; };
+  host.innerHTML = `
+    <div class="dialog-backdrop">
+      <div class="dialog" style="max-width:34rem">
+        <div class="dialog__head"><h3 class="dialog__title">${judul}</h3></div>
+        <div class="dialog__body">${rincian}</div>
+        <div class="dialog__foot">
+          <button class="btn" id="kBatal">Batal</button>
+          <button class="btn btn--emphasized" id="kLanjut">Terapkan</button>
+        </div>
+      </div>
+    </div>`;
+  $('#kBatal').onclick = tutup;
+  host.querySelector('.dialog-backdrop').onclick = (e) => { if (e.target === e.currentTarget) tutup(); };
+  $('#kLanjut').onclick = async (e) => {
+    e.currentTarget.disabled = true;
+    try { await lanjut(); tutup(); } catch (err) { toast(err.message, 'error'); e.currentTarget.disabled = false; }
+  };
+}
+
 async function paintMaster() {
   const host = $('#atpBody');
   host.innerHTML = `<div class="panel__body"><p class="muted">Memuat…</p></div>`;
@@ -132,6 +193,7 @@ async function paintMaster() {
     </div>
 
     ${ringkasanCabang(m)}
+    ${barAksiMassal(m)}
 
     <div class="panel__head" style="padding-top:0">
       <p class="panel__hint" style="margin:0">
@@ -194,6 +256,81 @@ async function paintMaster() {
       ATP.filterMaster.branch = lepas ? 'ALL' : kode;
       if (lepas) ATP.filterMaster.status = 'ALL';
       paintMaster();
+    };
+  });
+
+  const bS = $('#bSumber');
+  const bT = $('#bTujuan');
+  if (bS) bS.onchange = (e) => { ATP.massalSumber = e.target.value; ATP.massalTujuan = 'OXAR'; paintMaster(); };
+  if (bT) bT.onchange = (e) => { ATP.massalTujuan = e.target.value; };
+
+  $$('[data-massal]').forEach((el) => {
+    el.onclick = () => {
+      const aksi = el.dataset.massal;
+      const f = ATP.filterMaster;
+      const cab = m.cabang || [];
+      const asal = ATP.massalSumber || (cab.some((c) => c.code === 'Pusat') ? 'Pusat' : cab[0].code);
+      const pilihTujuan = ATP.massalTujuan || 'OXAR';
+      const targets = pilihTujuan === 'OXAR'
+        ? cab.filter((c) => c.code !== asal).map((c) => c.code)
+        : [pilihTujuan];
+
+      const lingkup = [];
+      if (f.search) lingkup.push(`pencarian "${esc(f.search)}"`);
+      if (f.shop !== 'ALL') lingkup.push(`brand ${esc(f.shop)}`);
+      if (f.category !== 'ALL') lingkup.push(f.category === 'Bundle' ? 'bundle saja' : 'SKU tunggal saja');
+
+      const teks = {
+        salin: {
+          judul: `Samakan dengan ${esc(asal)}`,
+          apa: `Ceklis di ${targets.length} cabang tujuan akan disalin dari keadaan yang berlaku di <b>${esc(asal)}</b>.`,
+          catatan: 'Hasilnya potret, bukan tautan. Kalau nanti ' + esc(asal) + ' berubah, cabang tujuan tidak ikut sampai tombol ini ditekan lagi.',
+        },
+        ocs: {
+          judul: 'Kembalikan ke Aktif OCS',
+          apa: 'Ceklis manual akan dihapus, sehingga barisnya kembali mengikuti OCS.',
+          catatan: 'Setelah ini nilainya berubah sendiri setiap penarikan, mengikuti OCS.',
+        },
+        aktif: {
+          judul: 'Ceklis semua',
+          apa: 'Semua baris dalam lingkup akan ditandai <b>aktif</b> secara manual.',
+          catatan: 'Ceklis manual mengalahkan OCS dan tidak berubah walau OCS berubah.',
+        },
+        nonaktif: {
+          judul: 'Hapus semua ceklis',
+          apa: 'Semua baris dalam lingkup akan ditandai <b>non-aktif</b> secara manual, sehingga tidak lagi dihitung ATP.',
+          catatan: 'Ceklis manual mengalahkan OCS dan tidak berubah walau OCS berubah.',
+        },
+      }[aksi];
+
+      konfirmMassal({
+        judul: teks.judul,
+        rincian: `
+          <p>${teks.apa}</p>
+          <p class="muted" style="font-size:.8rem">${teks.catatan}</p>
+          <table class="ftable" style="margin-top:.75rem">
+            <tbody>
+              <tr><td>Cabang tujuan</td><td><b>${targets.map(esc).join(', ')}</b></td></tr>
+              <tr><td>Lingkup SKU</td><td><b>${lingkup.length ? lingkup.join(' · ') : 'seluruh katalog'}</b></td></tr>
+              <tr><td>Perkiraan baris</td><td><b>${fmt(m.total * targets.length)}</b></td></tr>
+            </tbody>
+          </table>`,
+        lanjut: async () => {
+          const body = {
+            mode: aksi === 'salin' ? 'salin' : aksi === 'ocs' ? 'ocs' : 'set',
+            targets,
+            source: aksi === 'salin' ? asal : null,
+            aktif: aksi === 'aktif',
+            search: f.search || null,
+            shop: f.shop,
+            category: f.category,
+          };
+          const r = await api('/api/atp/override/bulk', { method: 'POST', body: JSON.stringify(body) });
+          toast(`${fmt(r.diubah)} baris diperbarui.`, 'success');
+          ATP.data = null;           // dashboard wajib dihitung ulang
+          await paintMaster();
+        },
+      });
     };
   });
 
