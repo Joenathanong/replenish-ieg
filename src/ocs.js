@@ -383,8 +383,23 @@ let atpExpiresAt = 0;
 let atpLogin = null;
 
 async function doAtpLogin() {
-  const user = config.ocs.atpUsername || username;
-  const pass = config.ocs.atpPassword || password;
+  /*
+   * Tidak ada jalan mundur ke akun biasa.
+   *
+   * Sebelumnya fungsi ini diam-diam memakai akun monitoring ketika kredensial
+   * ATP kosong. Akibatnya fatal dan tak terlihat: akun itu hanya punya akses
+   * area Pusat, sehingga penarikan tetap "berhasil" tetapi hanya menyegarkan
+   * satu cabang dan meninggalkan empat cabang lain dengan angka lama. Lebih
+   * baik gagal terang-terangan.
+   */
+  const user = config.ocs.atpUsername;
+  const pass = config.ocs.atpPassword;
+  if (!user || !pass) {
+    throw new Error(
+      'Kredensial ATP belum diisi. Setel OCS_ATP_USERNAME dan OCS_ATP_PASSWORD — ' +
+      'akun monitoring biasa tidak dipakai sebagai pengganti karena aksesnya hanya area Pusat.',
+    );
+  }
 
   const { ok, status, data } = await requestJson(
     `${baseUrl}/Auth/Login`,

@@ -206,6 +206,27 @@ export async function syncAtpMaster() {
     ]);
   }
 
+  /*
+   * Penjaga penarikan sebagian.
+   *
+   * Upsert per baris tidak bisa membedakan "cabang ini tidak berubah" dari
+   * "cabang ini tidak ikut terkirim". Kalau feed hanya memuat sebagian area —
+   * misalnya karena token yang dipakai aksesnya lebih sempit — hasilnya adalah
+   * satu cabang segar di antara empat cabang basi, tanpa satu pun tanda bahwa
+   * ada yang salah. Lebih baik dibatalkan sebelum menulis.
+   */
+  const areaDatang = new Set(stok.map((r) => areaKeCabang.get(r.AreaId)).filter(Boolean));
+  const areaHarap = new Set(cabang.map((b) => b.code));
+  const hilang = [...areaHarap].filter((k) => !areaDatang.has(k));
+
+  if (hilang.length) {
+    throw new Error(
+      `Penarikan ATP hanya memuat ${areaDatang.size} dari ${areaHarap.size} cabang; ` +
+      `tidak ada data untuk ${hilang.join(', ')}. Tidak ada yang ditulis supaya cabang lain ` +
+      'tidak tertinggal dengan angka lama. Periksa hak akses area pada akun ATP.',
+    );
+  }
+
   await insertBatched(SKU_SQL, [...skuMap.values()]);
   await insertBatched(BRANCH_SQL, branchValues);
 
