@@ -21,19 +21,24 @@ function ringkasanCabang(m) {
   return `
     <div class="tiles" style="margin:0 0 1rem">
       ${r.map((c) => {
-        const pct = c.total ? (c.aktif / c.total) * 100 : 0;
+        // Persentase yang ditampilkan adalah ATP itu sendiri: siap dibagi yang
+        // diceklis. Sempat memakai ceklis dibagi seluruh katalog, dan angkanya
+        // bentrok dengan dashboard karena mengukur hal yang sama sekali lain.
+        const atp = c.aktif ? (c.siap / c.aktif) * 100 : 0;
+        const n = nadaAtp(atp);
         return `
         <button class="tile tile--neutral ${dipilih === c.branch ? 'is-active' : ''}"
                 data-atp-cabang="${esc(c.branch)}"
-                title="Klik untuk menyaring ke cabang ${esc(c.name)}">
+                title="${esc(c.name)} — ${fmt(c.aktif)} SKU diceklis aktif, ${fmt(c.siap)} di antaranya stoknya di atas ambang. Klik untuk menyaring.">
           <span class="tile__label">${esc(c.name)}</span>
           <span class="tile__value">${fmt(c.aktif)}</span>
           <span class="tile__foot">
-            dari ${fmt(c.total)} SKU · ${pct.toFixed(1)}%
-            <span class="meter" style="max-width:4.5rem;margin-left:.35rem">
-              <span class="meter__fill meter__fill--brand" style="width:${pct.toFixed(1)}%"></span>
+            SKU diceklis${c.ditimpa ? ` · ${fmt(c.ditimpa)} ditimpa manual` : ''}
+            <br>
+            <b class="teks-${n}">ATP ${atp.toFixed(1)}%</b> — ${fmt(c.siap)} siap
+            <span class="meter" style="max-width:4rem;margin-left:.35rem">
+              <span class="meter__fill is-${n}" style="width:${Math.max(1, atp).toFixed(1)}%"></span>
             </span>
-            <br>${fmt(c.siap)} siap jual${c.ditimpa ? ` · ${fmt(c.ditimpa)} ditimpa manual` : ''}
           </span>
         </button>`;
       }).join('')}
@@ -107,7 +112,7 @@ async function paintMaster() {
           ? `Menampilkan ${fmt(m.items.length)} dari <b>${fmt(m.total)}</b> SKU. Persempit pencarian untuk melihat sisanya.`
           : `${fmt(m.total)} SKU`}
         · angka yang ditampilkan: <b>${esc(m.config.stockFieldLabel)}</b>, ambang &gt; ${fmt(m.config.threshold)} pcs
-        · ceklis menandai SKU aktif di cabang itu
+        · ceklis menandai SKU aktif di cabang itu, dan hanya yang terceklis yang dihitung ATP
       </p>
     </div>
 

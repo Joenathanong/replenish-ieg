@@ -500,8 +500,11 @@ table.ftable tbody tr.row--minus:hover { background: linear-gradient(90deg, #ffd
 .meter__fill--negative { background: var(--negative); }
 .meter__fill--critical { background: var(--critical); }
 .meter__fill--positive { background: var(--positive); }
-/* Cakupan katalog bukan kabar baik atau buruk, jadi warnanya netral. */
-.meter__fill--brand { background: var(--brand); }
+/* Meter ATP memakai pita status yang sama dengan peringkat cabang. */
+.meter__fill.is-good     { background: var(--atp-good); }
+.meter__fill.is-warning  { background: var(--atp-warning); }
+.meter__fill.is-serious  { background: var(--atp-serious); }
+.meter__fill.is-critical { background: var(--atp-critical); }
 
 .empty { padding: 3.5rem 1rem; text-align: center; color: var(--text-muted); }
 .empty .icon { color: var(--positive); width: 2rem; height: 2rem; margin-bottom: .5rem; }
