@@ -121,6 +121,19 @@ function paintSales() {
       </span>
     </div>` : '';
 
+  const usang = (c.usang && c.usang.length) ? `
+    <div class="strip strip--error">
+      ${icon('error')}
+      <span>
+        <b>${fmt(c.usang.length)} hari</b> ditarik dengan aturan lama yang sudah diketahui
+        salah, jadi angkanya tidak bisa dipercaya:
+        ${c.usang.slice(0, 8).map((t) => `<span class="badge badge--blocked">${esc(t)}</span>`).join(' ')}
+        ${c.usang.length > 8 ? ` dan ${fmt(c.usang.length - 8)} lainnya` : ''}.
+        Tarik ulang tanggal itu lewat <b>Tarik Data</b>. Datanya ada dan tampak wajar —
+        itulah sebabnya perlu ditandai.
+      </span>
+    </div>` : '';
+
   const kosong = (c.kosong && c.kosong.length) ? `
     <div class="strip strip--error">
       ${icon('error')}
@@ -150,7 +163,7 @@ function paintSales() {
         Agregat harian dari halaman Report OCS — jumlah order per status dan barang terjual per SKU.
       </p>
 
-      ${peringatanKosong}${kosong}${bolong}
+      ${peringatanKosong}${usang}${kosong}${bolong}
 
       <div class="tiles">${tiles}</div>
 

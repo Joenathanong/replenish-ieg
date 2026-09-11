@@ -398,6 +398,16 @@ export async function ensureSchema() {
   await ensureColumn('sales_sync_day', 'fingerprint', 'VARCHAR(80) NULL');
   await ensureColumn('sales_sync_day', 'stable_count', 'INT NOT NULL DEFAULT 0');
 
+  /*
+   * Versi aturan penarikan yang dipakai saat hari itu diambil.
+   *
+   * Saat aturan berubah dengan cara yang membuat data lama salah — seperti
+   * perbaikan batas hari dari UTC ke zona OCS — hari lama tidak bisa dibedakan
+   * dari yang baru tanpa menebak-nebak lewat cap waktu. Dengan kolom ini
+   * aplikasi bisa menyebut sendiri hari mana yang perlu ditarik ulang.
+   */
+  await ensureColumn('sales_sync_day', 'pull_version', 'INT NOT NULL DEFAULT 0');
+
   await seedSettings();
 }
 

@@ -30,6 +30,18 @@ const BUKAN_STATUS = new Set(['Date', 'ShopName', 'Area', 'CommercePlatform', 'T
 
 const BATCH = 500;
 
+/**
+ * Versi aturan penarikan.
+ *
+ * Dinaikkan setiap kali cara pengambilan berubah sedemikian rupa sehingga data
+ * yang sudah tersimpan menjadi salah. Hari yang tersimpan dengan versi lebih
+ * rendah dilaporkan sebagai usang dan perlu ditarik ulang.
+ *
+ *   1 — batas rentang memakai tengah malam UTC; hari di tepi potongan terpotong
+ *   2 — batas rentang dipatok ke zona waktu OCS (+07:00); hari selalu utuh
+ */
+export const PULL_VERSION = 2;
+
 /*
  * Hari per permintaan, menyesuaikan umur datanya.
  *
@@ -190,15 +202,18 @@ async function tarikPotongan({ from, to, hari }, opsi) {
       skuValues.filter((v) => v[0] === tgl).length,
       now,
       sidik.get(tgl),
+      PULL_VERSION,
     ]);
 
     await conn.query(
-      `INSERT INTO sales_sync_day (sales_date, order_rows, sku_rows, pulled_at, fingerprint, stable_count)
-       VALUES ${cakupan.map(() => '(?,?,?,?,?,0)').join(',')}
+      `INSERT INTO sales_sync_day
+         (sales_date, order_rows, sku_rows, pulled_at, fingerprint, pull_version, stable_count)
+       VALUES ${cakupan.map(() => '(?,?,?,?,?,?,0)').join(',')}
        ON DUPLICATE KEY UPDATE
          order_rows   = VALUES(order_rows),
          sku_rows     = VALUES(sku_rows),
          pulled_at    = VALUES(pulled_at),
+         pull_version = VALUES(pull_version),
          stable_count = IF(fingerprint = VALUES(fingerprint), stable_count + 1, 0),
          fingerprint  = VALUES(fingerprint)`,
       cakupan.flat(),
@@ -384,6 +399,16 @@ export async function getSalesCoverage() {
     'SELECT sales_date FROM sales_sync_day WHERE sku_rows = 0 AND order_rows = 0 ORDER BY sales_date',
   )).map((r) => tanggalSaja(r.sales_date));
 
+  /*
+   * Hari yang ditarik dengan aturan lama. Datanya ada dan tampak wajar, tetapi
+   * dihitung dengan cara yang sudah diketahui salah — jenis kekeliruan yang
+   * paling sulit dilihat, karena tidak menyisakan lubang apa pun.
+   */
+  const usang = (await all(
+    'SELECT sales_date FROM sales_sync_day WHERE pull_version < ? ORDER BY sales_date',
+    [PULL_VERSION],
+  )).map((r) => tanggalSaja(r.sales_date));
+
   return {
     hari,
     dari: tanggalSaja(row.dari),
@@ -391,5 +416,6 @@ export async function getSalesCoverage() {
     terakhir: row.terakhir,
     bolong,
     kosong,
+    usang,
   };
 }

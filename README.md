@@ -341,9 +341,23 @@ tengah malam UTC. Dengan potongan tiga-harian, dua dari tiga hari akan salah.
 Setelah batasnya dipatok ke zona OCS, keempat posisi (tengah, awal, akhir, sendirian)
 memberi angka yang sama.
 
-Halaman Penjualan menandai dua keadaan berbeda: **hari bolong** (belum pernah ditarik)
-dan **hari kosong** (tercatat ditarik tetapi tanpa satu baris pun). Yang kedua lebih
-menyesatkan karena cakupannya tampak lengkap.
+Halaman Penjualan menandai tiga keadaan berbeda:
+
+| Keadaan | Arti |
+|---|---|
+| **Hari bolong** | Belum pernah ditarik |
+| **Hari kosong** | Tercatat ditarik tetapi tanpa satu baris pun |
+| **Hari usang** | Ditarik dengan aturan lama yang sudah diketahui salah |
+
+Dua yang terakhir lebih menyesatkan daripada yang pertama, karena cakupannya tampak
+lengkap. Hari usang bahkan berisi angka yang wajar — hanya saja dihitung dengan cara
+yang keliru.
+
+Kolom `pull_version` pada `sales_sync_day` menyimpan versi aturan penarikan yang dipakai
+saat hari itu diambil. Ketika aturan berubah sedemikian rupa sehingga data lama menjadi
+salah, konstanta `PULL_VERSION` di `src/sales.js` dinaikkan dan hari berversi lebih
+rendah otomatis dilaporkan usang. Tanpa ini, satu-satunya cara menemukannya adalah
+menebak dari cap waktu penarikan.
 
 Rentang penarikan ditentukan sendiri dari bagian **Tarik Data**. Worker menyegarkan
 beberapa hari terakhir tiap putaran, sebanyak `sales_resync_days` di halaman Pengaturan
